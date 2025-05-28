@@ -2,10 +2,10 @@ import hashlib
 
 # Database Configuration
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'localicad',
-    'database': 'sentiment_analysis'
+    'host': st.secrets["mysql"]["host"],
+    'user': st.secrets["mysql"]["user"],
+    'password': st.secrets["mysql"]["password"],
+    'database': st.secrets["mysql"]["database"]
 }
 
 # User Configuration

@@ -2,7 +2,7 @@ import hashlib
 
 # Database Configuration
 DB_CONFIG = {
-    'host': 'localhost',
+    'host': 'host.docker.internal',
     'user': 'root',
     'password': 'localicad',
     'database': 'sentiment_analysis'

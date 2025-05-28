@@ -108,7 +108,7 @@ class Dashboard:
             </div>
         """, unsafe_allow_html=True)
         
-        tab1, tab2 = st.tabs(["📤 Upload CSV", "🗄️ Database Data"])
+        tab1, tab2, tab3 = st.tabs(["📤 Upload CSV", "🗄️ Database Data", "🌐 Scrape Review"])
         
         with tab1:
             st.markdown("### Upload CSV File")
@@ -126,11 +126,13 @@ class Dashboard:
                         st.error("❌ CSV must contain 'content' and 'Label' columns")
                     else:
                         # Preprocess text
-                        df['text_clean'] = df['content'].apply(self.analyzer.clean_text)
-                        df['text_StopWord'] = df['text_clean'].apply(self.analyzer.remove_stopwords)
-                        df['text_tokens'] = df['text_StopWord'].apply(self.analyzer.tokenize)
-                        df['text_steamindo'] = df['text_tokens'].apply(self.analyzer.stem)
+                        df['text_clean'] = df['content'].apply(self.analyzer.preprocess_text)
+                        df['text_StopWord'] = df['text_clean']
+                        df['text_tokens'] = df['text_StopWord']
+                        df['text_steamindo'] = df['text_tokens']
                         
+                        st.session_state.original_data = df.copy()
+
                         # Perform oversampling for positive labels
                         positif_samples = df[df['Label'] == 'Positif']
                         negatif_samples = df[df['Label'] == 'Negatif']
@@ -175,6 +177,8 @@ class Dashboard:
                     try:
                         db_data = fetch_data_from_db(st.session_state.db_connection)
                         if not db_data.empty:
+                            st.session_state.original_data = db_data.copy()
+                            
                             # Perform oversampling for positive labels
                             positif_samples = db_data[db_data['Label'] == 'Positif']
                             negatif_samples = db_data[db_data['Label'] == 'Negatif']
@@ -200,6 +204,48 @@ class Dashboard:
                         st.error(f"❌ Error loading database data: {str(e)}")
             else:
                 st.error("❌ Database connection not available")
+
+        with tab3:
+            st.markdown("### 🌐 Scrape Google Playstore Reviews")
+            app_id = st.text_input("Masukkan App ID", value="app.bpjs.mobile")
+            num_reviews = st.slider("Jumlah Review", 1000, 10000, 5000)
+
+            if st.button("🚀 Ambil Review"):
+                try:
+                    from google_play_scraper import Sort, reviews
+
+                    result, _ = reviews(
+                        app_id,
+                        lang='id',
+                        country='id',
+                        sort=Sort.NEWEST,
+                        count=num_reviews
+                    )
+
+                    df = pd.DataFrame(result)[['content', 'score']]
+                    df['Label'] = df['score'].apply(lambda x: 'Positif' if x >= 4 else 'Negatif')
+                    df['text_clean'] = df['content'].apply(self.analyzer.preprocess_text)
+                    df['text_StopWord'] = df['text_clean']
+                    df['text_tokens'] = df['text_StopWord']
+                    df['text_steamindo'] = df['text_tokens']
+
+                    st.session_state.data = df
+                    st.session_state.original_data = df.copy()
+                    st.session_state.data_loaded = True
+
+                    st.success("✅ Berhasil ambil dan proses data")
+                    st.dataframe(df.head())
+
+                    if st.checkbox("💾 Simpan ke database"):
+                        if st.session_state.db_connection and st.session_state.db_connection.is_connected():
+                            from database import batch_insert_to_db
+                            df['score'] = df['score'].astype(int)
+                            if batch_insert_to_db(st.session_state.db_connection, df):
+                                st.success("✅ Data berhasil disimpan ke database!")
+                            else:
+                                st.error("❌ Gagal simpan ke database")
+                except Exception as e:
+                    st.error(f"Gagal scrape data: {e}")
 
     def render_data_overview(self):
         """Render data overview section"""
@@ -227,12 +273,23 @@ class Dashboard:
         
         with col1:
             fig, ax = plt.subplots(figsize=(8, 6))
-            sentiment_counts = st.session_state.data['Label'].value_counts()
-            colors = ['#4CAF50', '#FF5252']  # Green for positive, Red for negative
-            ax.pie(sentiment_counts, labels=sentiment_counts.index, 
-                  autopct='%1.1f%%', colors=colors, startangle=90)
+            
+            # Ambil data asli sebelum oversampling kalo ada
+            data_to_use = st.session_state.original_data if 'original_data' in st.session_state else st.session_state.data
+            
+            # Tentukan urutan label dan warna secara eksplisit
+            labels = ['Positif', 'Negatif']
+            colors = ['#4CAF50', '#FF5252']  # Hijau, Merah
+            
+            # Hitung jumlah per label sesuai urutan
+            sentiment_counts = data_to_use['Label'].value_counts()
+            values = [sentiment_counts.get(label, 0) for label in labels]
+
+            # Pie chart
+            ax.pie(values, labels=labels, autopct='%1.1f%%', colors=colors, startangle=90)
             ax.axis('equal')
             st.pyplot(fig)
+
             
         with col2:
             st.markdown("#### Count Statistics")
@@ -324,10 +381,10 @@ class Dashboard:
                 
             try:
                 # Preprocess input
-                text_clean = self.analyzer.clean_text(user_input)
-                text_StopWord = self.analyzer.remove_stopwords(text_clean)
-                text_tokens = self.analyzer.tokenize(text_StopWord)
-                text_steamindo = self.analyzer.stem(text_tokens)
+                text_clean = self.analyzer.preprocess_text(user_input)
+                text_StopWord = text_clean
+                text_tokens = text_StopWord
+                text_steamindo = text_tokens
                 
                 # Prepare model if not already cached
                 if not st.session_state.model:

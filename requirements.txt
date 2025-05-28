@@ -73,7 +73,7 @@ propcache==0.3.1
 protobuf==5.28.2
 psutil==7.0.0
 pure_eval==0.2.3
-pyarrow==17.0.0
+pyarrow==16.0.0
 pycparser==2.22
 pydeck==0.9.1
 Pygments==2.18.0

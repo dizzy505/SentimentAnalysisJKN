@@ -1,5 +1,5 @@
 import hashlib
-
+import streamlit as st
 # Database Configuration
 DB_CONFIG = {
     'host': st.secrets["mysql"]["host"],

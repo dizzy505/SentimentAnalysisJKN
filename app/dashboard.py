@@ -75,15 +75,6 @@ class Dashboard:
                 </div>
             """, unsafe_allow_html=True)
             
-            # Display database connection status
-            if st.session_state.db_connection is not None and st.session_state.db_connection.is_connected():
-                st.success("✅ Database connection established")
-            else:
-                st.error("❌ Database connection failed. Some features may not work properly.")
-                if st.button("🔄 Retry Connection", use_container_width=True):
-                    st.session_state.db_connection = create_db_connection()
-                    st.rerun()
-            
             with st.container():
                 st.markdown("### Login Details")
                 username = st.text_input('Username', placeholder='Enter your username')

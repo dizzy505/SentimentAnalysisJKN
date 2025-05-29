@@ -71,7 +71,7 @@ class Dashboard:
         with col2:
             st.markdown("""
                 <div style='text-align: center; margin-bottom: 2rem;'>
-                    <h1 style='color: #2c3e50;'>🔐 Mobile JKN Sentiment Analysis</h1>
+                    <h1 style='color: #2c3e50;'>Mobile JKN Sentiment Analysis</h1>
                 </div>
             """, unsafe_allow_html=True)
             
@@ -86,20 +86,20 @@ class Dashboard:
                         users[username]['password'] == hashed_password):
                         st.session_state.logged_in = True
                         st.session_state.role = users[username]['role']
-                        st.success("🎉 Login successful!")
+                        st.success("Login successful!")
                         st.rerun()
                     else:
-                        st.error('❌ Invalid credentials')
+                        st.error('Invalid credentials')
 
     def render_data_input(self):
         """Render data input section"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
-                <h1 style='color: #2c3e50;'>📊 Data Input</h1>
+                <h1 style='color: #2c3e50;'>Data Input</h1>
             </div>
         """, unsafe_allow_html=True)
         
-        tab1, tab2, tab3 = st.tabs(["📤 Upload CSV", "🗄️ Database Data", "🌐 Scrape Review"])
+        tab1, tab2, tab3 = st.tabs(["Upload CSV", "Database Data", "Scrape Review"])
         
         with tab1:
             st.markdown("### Upload CSV File")
@@ -114,7 +114,7 @@ class Dashboard:
                     # Validate columns
                     required_cols = ['content', 'Label']
                     if not all(col in df.columns for col in required_cols):
-                        st.error("❌ CSV must contain 'content' and 'Label' columns")
+                        st.error("CSV must contain 'content' and 'Label' columns")
                     else:
                         # Preprocess text
                         df['text_clean'] = df['content'].apply(self.analyzer.preprocess_text)
@@ -132,22 +132,22 @@ class Dashboard:
                             n_samples = 7000 - len(positif_samples)
                             synthetic_samples = positif_samples.sample(n=n_samples, replace=True, random_state=42)
                             df = pd.concat([df, synthetic_samples], ignore_index=True)
-                            st.info(f"📈 Oversampled positive labels to {len(df[df['Label'] == 'Positif'])} samples")
+                            st.info(f"Oversampled positive labels to {len(df[df['Label'] == 'Positif'])} samples")
                         
                         # Save to database option
-                        if st.checkbox("💾 Save to database"):
+                        if st.checkbox("Save to database"):
                             if st.session_state.db_connection and st.session_state.db_connection.is_connected():
                                 if batch_insert_to_db(st.session_state.db_connection, df):
-                                    st.success(f"✅ Successfully saved {len(df)} records to database")
+                                    st.success(f"Successfully saved {len(df)} records to database")
                                 else:
-                                    st.error("❌ Failed to save to database")
+                                    st.error("Failed to save to database")
                             else:
-                                st.error("❌ Database connection not available")
+                                st.error("Database connection not available")
                         
                         st.session_state.data = df
                         st.session_state.data_loaded = True
                         st.session_state.sample_data_used = False
-                        st.success("✅ Data loaded successfully!")
+                        st.success("Data loaded successfully!")
                         
                         # Display sample
                         st.markdown("### Data Preview")
@@ -158,13 +158,13 @@ class Dashboard:
                         }))
                         
                 except Exception as e:
-                    st.error(f"❌ Error loading CSV: {str(e)}")
+                    st.error(f"Error loading CSV: {str(e)}")
         
         with tab2:
             st.markdown("### Load Data from Database")
             
             if st.session_state.db_connection and st.session_state.db_connection.is_connected():
-                if st.button("🔄 Load All Database Data", use_container_width=True):
+                if st.button("Load All Database Data", use_container_width=True):
                     try:
                         db_data = fetch_data_from_db(st.session_state.db_connection)
                         if not db_data.empty:
@@ -178,12 +178,12 @@ class Dashboard:
                                 n_samples = 7000 - len(positif_samples)
                                 synthetic_samples = positif_samples.sample(n=n_samples, replace=True, random_state=42)
                                 db_data = pd.concat([db_data, synthetic_samples], ignore_index=True)
-                                st.info(f"📈 Oversampled positive labels to {len(db_data[db_data['Label'] == 'Positif'])} samples")
+                                st.info(f"Oversampled positive labels to {len(db_data[db_data['Label'] == 'Positif'])} samples")
                             
                             st.session_state.data = db_data
                             st.session_state.data_loaded = True
                             st.session_state.sample_data_used = False
-                            st.success(f"✅ Successfully loaded {len(db_data)} records from database")
+                            st.success(f"Successfully loaded {len(db_data)} records from database")
                             st.dataframe(db_data.head(10).style.set_properties(**{
                                 'background-color': '#f8f9fa',
                                 'border-radius': '10px',
@@ -192,16 +192,16 @@ class Dashboard:
                         else:
                             st.info("ℹ️ No data found in database")
                     except Exception as e:
-                        st.error(f"❌ Error loading database data: {str(e)}")
+                        st.error(f"Error loading database data: {str(e)}")
             else:
-                st.error("❌ Database connection not available")
+                st.error("Database connection not available")
 
         with tab3:
-            st.markdown("### 🌐 Scrape Google Playstore Reviews")
+            st.markdown("### Scrape Google Playstore Reviews")
             app_id = st.text_input("Masukkan App ID", value="app.bpjs.mobile")
             num_reviews = st.slider("Jumlah Review", 1000, 10000, 5000)
 
-            if st.button("🚀 Ambil Review"):
+            if st.button("Ambil Review"):
                 try:
                     from google_play_scraper import Sort, reviews
 
@@ -224,17 +224,17 @@ class Dashboard:
                     st.session_state.original_data = df.copy()
                     st.session_state.data_loaded = True
 
-                    st.success("✅ Berhasil ambil dan proses data")
+                    st.success("Berhasil ambil dan proses data")
                     st.dataframe(df.head())
 
-                    if st.checkbox("💾 Simpan ke database"):
+                    if st.checkbox("Simpan ke database"):
                         if st.session_state.db_connection and st.session_state.db_connection.is_connected():
                             from database import batch_insert_to_db
                             df['score'] = df['score'].astype(int)
                             if batch_insert_to_db(st.session_state.db_connection, df):
-                                st.success("✅ Data berhasil disimpan ke database!")
+                                st.success("Data berhasil disimpan ke database!")
                             else:
-                                st.error("❌ Gagal simpan ke database")
+                                st.error("Gagal simpan ke database")
                 except Exception as e:
                     st.error(f"Gagal scrape data: {e}")
 
@@ -242,12 +242,12 @@ class Dashboard:
         """Render data overview section"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
-                <h1 style='color: #2c3e50;'>📊 Data Overview</h1>
+                <h1 style='color: #2c3e50;'>Data Overview</h1>
             </div>
         """, unsafe_allow_html=True)
         
         if not st.session_state.data_loaded:
-            st.warning("⚠️ Please load or input data first")
+            st.warning("Please load or input data first")
             return
         
         # Display sample data
@@ -294,16 +294,16 @@ class Dashboard:
         """Render model performance metrics"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
-                <h1 style='color: #2c3e50;'>📈 Model Performance Analysis</h1>
+                <h1 style='color: #2c3e50;'>Model Performance Analysis</h1>
             </div>
         """, unsafe_allow_html=True)
         
         if not st.session_state.data_loaded:
-            st.warning("⚠️ Please load or input data first")
+            st.warning("Please load or input data first")
             return
         
         if len(st.session_state.data) < 10:
-            st.warning("⚠️ Insufficient data for model training. Please add more data (at least 10 entries).")
+            st.warning("Insufficient data for model training. Please add more data (at least 10 entries).")
             return
         
         # Split data
@@ -343,13 +343,13 @@ class Dashboard:
             
         except Exception as e:
             logger.error(f"Error in model performance: {str(e)}")
-            st.error("❌ Error analyzing model performance. Check your data.")
+            st.error("Error analyzing model performance. Check your data.")
 
     def render_sentiment_prediction(self):
         """Render sentiment prediction interface"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
-                <h1 style='color: #2c3e50;'>🔮 Sentiment Prediction</h1>
+                <h1 style='color: #2c3e50;'>Sentiment Prediction</h1>
             </div>
         """, unsafe_allow_html=True)
         
@@ -359,15 +359,15 @@ class Dashboard:
             help="Enter the text you want to analyze for sentiment"
         )
         
-        save_to_db = st.checkbox("💾 Save result to database", value=True)
+        save_to_db = st.checkbox("Save result to database", value=True)
         
         if st.button('Analyze Sentiment', use_container_width=True):
             if not user_input:
-                st.warning('⚠️ Please enter some text to analyze')
+                st.warning('Please enter some text to analyze')
                 return
                 
             if not st.session_state.data_loaded:
-                st.warning("⚠️ Please load or input data first to train the model")
+                st.warning("Please load or input data first to train the model")
                 return
                 
             try:
@@ -393,9 +393,9 @@ class Dashboard:
                 
                 # Display result with appropriate styling
                 if prediction == 'Positif':
-                    st.success(f"✅ Sentiment: {prediction}")
+                    st.success(f"Sentiment: {prediction}")
                 else:
-                    st.error(f"❌ Sentiment: {prediction}")
+                    st.error(f"Sentiment: {prediction}")
                 
                 # Show prediction probabilities
                 probs = st.session_state.model.predict_proba(tfidf_input)[0]
@@ -421,24 +421,24 @@ class Dashboard:
                         text_tokens,
                         text_steamindo
                     ):
-                        st.success("✅ Result saved to database")
+                        st.success("Result saved to database")
                     else:
-                        st.error("❌ Failed to save result to database")
+                        st.error("Failed to save result to database")
                 
             except Exception as e:
                 logger.error(f"Error in sentiment prediction: {str(e)}")
-                st.error("❌ An error occurred during analysis. Please try again.")
+                st.error("An error occurred during analysis. Please try again.")
 
     def render_wordcloud(self):
         """Render word cloud visualization"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
-                <h1 style='color: #2c3e50;'>☁️ Word Cloud Visualization</h1>
+                <h1 style='color: #2c3e50;'>Word Cloud Visualization</h1>
             </div>
         """, unsafe_allow_html=True)
         
         if not st.session_state.data_loaded:
-            st.warning("⚠️ Please load or input data first")
+            st.warning("Please load or input data first")
             return
         
         sentiment = st.radio(
@@ -456,7 +456,7 @@ class Dashboard:
             )
             
             if not text_data:
-                st.warning(f"⚠️ No {sentiment.lower()} sentiment data available")
+                st.warning(f"No {sentiment.lower()} sentiment data available")
                 return
             
             # Generate word cloud
@@ -477,4 +477,4 @@ class Dashboard:
             
         except Exception as e:
             logger.error(f"Error generating word cloud: {str(e)}")
-            st.error("❌ Failed to generate word cloud visualization") 
+            st.error("Failed to generate word cloud visualization") 

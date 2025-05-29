@@ -1,212 +1,205 @@
 import streamlit as st
 
-# Set page configuration (must be first Streamlit command)
+# ==== PAGE CONFIG ====
 st.set_page_config(
     page_title="Mobile JKN Sentiment Analysis",
-    page_icon="📊",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Custom CSS for better styling
-st.markdown("""
-    <style>
-    /* Main container styling */
-    .main {
-        padding: 2rem;
-    }
-    
-    /* Sidebar styling */
-    .css-1d391kg {
-        padding: 1.5rem;
-        background-color: #f8f9fa;
-    }
-    
-    /* Button styling */
-    .stButton>button {
-        width: 100%;
-        border-radius: 20px;
-        height: 3em;
-        font-size: 1.1em;
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton>button:hover {
-        background-color: #45a049;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    /* Menu button styling */
-    .menu-button {
-        width: 100%;
-        border-radius: 10px;
-        padding: 0.8rem;
-        margin-bottom: 0.5rem;
-        background-color: #f8f9fa;
-        border: 1px solid #ddd;
-        text-align: left;
-        transition: all 0.3s ease;
-    }
-    
-    .menu-button:hover {
-        background-color: #e9ecef;
-        border-color: #4CAF50;
-    }
-    
-    .menu-button.active {
-        background-color: #4CAF50;
-        color: white;
-        border-color: #4CAF50;
-    }
-    
-    /* Input field styling */
-    .stTextInput>div>div>input,
-    .stTextArea>div>div>textarea {
-        border-radius: 10px;
-        border: 1px solid #ddd;
-        padding: 0.5rem;
-    }
-    
-    /* Selectbox styling */
-    .stSelectbox>div>div>select {
-        border-radius: 10px;
-        border: 1px solid #ddd;
-    }
-    
-    /* File uploader styling */
-    .stFileUploader>div>div>button {
-        border-radius: 10px;
-        background-color: #4CAF50;
-        color: white;
-    }
-    
-    /* Metric card styling */
-    .metric-card {
-        background-color: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    /* Alert styling */
-    .stAlert {
-        border-radius: 10px;
-        padding: 1rem;
-    }
-    
-    /* Dataframe styling */
-    .stDataFrame {
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    /* Title styling */
-    h1 {
-        color: #2c3e50;
-        margin-bottom: 1.5rem;
-    }
-    
-    h2 {
-        color: #34495e;
-        margin-bottom: 1rem;
-    }
-    
-    h3 {
-        color: #7f8c8d;
-        margin-bottom: 0.8rem;
-    }
-    </style>
-""", unsafe_allow_html=True)
 
 from models import SentimentAnalyzer
 from dashboard import Dashboard
 from utils import init_session_state
 from database import create_db_connection
 
-def main():
-    """Main application entry point"""
-    # Initialize session state
-    init_session_state()
-    
-    # Initialize analyzer and dashboard
-    analyzer = SentimentAnalyzer()
-    dashboard = Dashboard(analyzer)
-    
-    # Handle authentication
-    if not st.session_state.logged_in:
-        dashboard.render_login()
-        return
-    
-    # Sidebar navigation with enhanced styling
+
+# ==== SESSION INIT ====
+init_session_state()
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "Data Input"
+
+# ==== CUSTOM CSS ====
+st.markdown("""
+<style>
+body {
+    background-color: #f5f6fa;
+}
+.main-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem;
+    border-radius: 15px;
+    margin-bottom: 1rem;
+    color: white;
+    text-align: center;
+}
+.nav-container {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 20px;
+    padding: 0.5rem;
+    background-color: #1e1e2f;
+    border-radius: 10px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+.nav-button {
+    padding: 0.6rem 1.2rem;
+    color: white;
+    font-weight: bold;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    transition: 0.2s ease-in-out;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.nav-button:hover {
+    border: 2px solid #60a5fa;
+    background-color: #374151;
+    cursor: pointer;
+}
+.nav-button.active {
+    background-color: #2563eb;
+    border: 2px solid #60a5fa;
+}
+.status-connected {
+    color: #28a745;
+    font-weight: bold;
+}
+.status-disconnected {
+    color: #dc3545;
+    font-weight: bold;
+}
+.stButton > button {
+    width: 100%;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.element-container {
+    margin: 0 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ==== SIDEBAR ====
+def render_sidebar():
     with st.sidebar:
-        st.markdown("""
-            <div style='text-align: center; margin-bottom: 2rem;'>
-                <h2 style='color: #2c3e50;'>Menu</h2>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Menu items based on role
+        st.markdown("### Settings")
+
         if st.session_state.role == 'admin':
             menu_items = [
-                ('📤', 'Data Input'),
-                ('📊', 'Data Overview'),
-                ('📈', 'Model Performance'),
-                ('🔮', 'Sentiment Prediction'),
-                ('☁️', 'Word Cloud')
+                ('', 'Data Input'),
+                ('', 'Data Overview'),
+                ('', 'Model Performance'),
+                ('', 'Sentiment Prediction'),
+                ('', 'Word Cloud')
             ]
         else:
-            # Regular users can only access Sentiment Prediction
-            menu_items = [('🔮 Sentiment Prediction', 'Sentiment Prediction')]
-            # Set current page to Sentiment Prediction for regular users
+            menu_items = [('', 'Sentiment Prediction')]
             st.session_state.current_page = 'Sentiment Prediction'
-        
-        # Create menu buttons
-        for icon, item in menu_items:
-            if st.button(
-                f"{icon} {item}",
-                key=f"menu_{item}",
-                use_container_width=True,
-                type="primary" if st.session_state.get('current_page') == item else "secondary"
-            ):
-                st.session_state.current_page = item
-                st.rerun()
-        
-        # Database status with enhanced styling
-        with st.expander("🔌 Database Status", expanded=False):
+
+        st.markdown("#### Database Status")
+        with st.expander("Database Status", expanded=False):
             if st.session_state.db_connection and st.session_state.db_connection.is_connected():
-                st.success("✅ Connected to MySQL")
+                st.success("Connected to MySQL")
             else:
-                st.error("❌ Not connected to MySQL")
-                if st.button("🔄 Reconnect", use_container_width=True):
+                st.error("Not connected to MySQL")
+                if st.button("Reconnect", use_container_width=True):
                     st.session_state.db_connection = create_db_connection()
                     st.rerun()
-        
-        # Logout button with enhanced styling
-        if st.button('🚪 Logout', use_container_width=True):
+
+        st.markdown("#### Logout")
+        if st.button('Logout', use_container_width=True):
             if st.session_state.db_connection and st.session_state.db_connection.is_connected():
                 st.session_state.db_connection.close()
             st.session_state.clear()
             st.rerun()
+
+# ==== HEADER ====
+def render_header():
+    st.markdown("""
+    <div class="main-header">
+        <h1>Mobile JKN Sentiment Analysis</h1>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==== NAVBAR ====
+def render_navbar_compact():
+    if st.session_state.role == 'admin':
+        pages = {
+            "Data Input": "",
+            "Data Overview": "", 
+            "Model Performance": "",
+            "Sentiment Prediction": "",
+            "Word Cloud": ""
+        }
+    else:
+        pages = {
+            "Sentiment Prediction": ""
+        }
+
+    st.markdown("""
+    <style>
+    .compact-nav {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 8px;
+        background-color: #1e1e2f;
+        border-radius: 10px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
-    # Main content area with consistent padding
-    with st.container():
-        # Get current page from session state
-        current_page = st.session_state.get('current_page', 'Data Input')
+    st.markdown('<div class="compact-nav">', unsafe_allow_html=True)
+    
+    button_container = st.container()
+    with button_container:
+        button_cols = st.columns(len(pages), gap="small")
         
-        # Render selected page
-        if current_page == 'Data Input':
+        for i, (label, _) in enumerate(pages.items()):
+            with button_cols[i]:
+                is_current = st.session_state.current_page == label
+                if st.button(
+                    f"{label}", 
+                    key=f"compact_nav_{label}",
+                    use_container_width=True,
+                    type="primary" if is_current else "secondary"
+                ):
+                    st.session_state.current_page = label
+                    st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ==== MAIN ====
+def main():
+    analyzer = SentimentAnalyzer()
+    dashboard = Dashboard(analyzer)
+
+    if not st.session_state.logged_in:
+        dashboard.render_login()
+        return
+
+    render_sidebar()
+    render_header()
+    render_navbar_compact()
+
+    page = st.session_state.current_page
+    with st.container():
+        if page == 'Data Input':
             dashboard.render_data_input()
-        elif current_page == 'Data Overview':
+        elif page == 'Data Overview':
             dashboard.render_data_overview()
-        elif current_page == 'Model Performance':
+        elif page == 'Model Performance':
             dashboard.render_model_performance()
-        elif current_page == 'Sentiment Prediction':
+        elif page == 'Sentiment Prediction':
             dashboard.render_sentiment_prediction()
-        elif current_page == 'Word Cloud':
+        elif page == 'Word Cloud':
             dashboard.render_wordcloud()
 
 if __name__ == "__main__":
-    main() 
+    main()

@@ -145,7 +145,7 @@ class Dashboard:
                         
                         # Save to database option
                         if st.checkbox("💾 Save to database"):
-                            if st.session_state.db_connection and st.session_state.db_connection.is_connected():
+                            if st.session_state.db_connection:
                                 if batch_insert_to_db(st.session_state.db_connection, df):
                                     st.success(f"✅ Successfully saved {len(df)} records to database")
                                 else:
@@ -172,7 +172,7 @@ class Dashboard:
         with tab2:
             st.markdown("### Load Data from Database")
             
-            if st.session_state.db_connection and st.session_state.db_connection.is_connected():
+            if st.session_state.db_connection:
                 if st.button("🔄 Load All Database Data", use_container_width=True):
                     try:
                         db_data = fetch_data_from_db(st.session_state.db_connection)
@@ -237,7 +237,7 @@ class Dashboard:
                     st.dataframe(df.head())
 
                     if st.checkbox("💾 Simpan ke database"):
-                        if st.session_state.db_connection and st.session_state.db_connection.is_connected():
+                        if st.session_state.db_connection:
                             from database import batch_insert_to_db
                             df['score'] = df['score'].astype(int)
                             if batch_insert_to_db(st.session_state.db_connection, df):

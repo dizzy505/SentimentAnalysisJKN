@@ -76,7 +76,7 @@ class Dashboard:
             """, unsafe_allow_html=True)
             
             with st.container():
-                st.markdown("### Login Details")
+                st.markdown("### Login")
                 username = st.text_input('Username', placeholder='Enter your username')
                 password = st.text_input('Password', type='password', placeholder='Enter your password')
                 

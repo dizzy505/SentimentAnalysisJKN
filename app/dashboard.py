@@ -103,7 +103,7 @@ class Dashboard:
         
         with tab1:
             st.markdown("### Upload CSV File")
-            st.markdown("Upload a CSV file with 'content' and 'Label' columns. The 'Label' column should contain 'Positif' or 'Negatif' values.")
+            st.info("Upload a CSV file with 'Label' column")
             
             uploaded_file = st.file_uploader("Choose a CSV file", type="csv", help="Select a CSV file to upload")
             

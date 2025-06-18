@@ -250,14 +250,6 @@ class Dashboard:
             st.warning("Please load or input data first")
             return
         
-        # Display sample data
-        st.markdown("### Sample Data")
-        st.dataframe(st.session_state.data.head().style.set_properties(**{
-            'background-color': '#f8f9fa',
-            'border-radius': '10px',
-            'padding': '10px'
-        }))
-        
         # Display sentiment distribution
         st.markdown("### Sentiment Distribution")
         col1, col2 = st.columns([1, 1])

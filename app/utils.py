@@ -26,5 +26,6 @@ def init_session_state():
             'data': None,
             'data_loaded': False,
             'sample_data_used': False,
-            'db_connection': None
+            'db_connection': None,
+            'data_source': None
         }) 

@@ -64,6 +64,38 @@ class Dashboard:
         if st.session_state.db_connection is None:
             st.session_state.db_connection = create_db_connection()
         
+        # Auto-load data from database if not already loaded
+        if not st.session_state.data_loaded and st.session_state.db_connection and st.session_state.db_connection.is_connected():
+            self._load_database_data()
+        
+    def _load_database_data(self):
+        """Load data from database automatically"""
+        try:
+            db_data = fetch_data_from_db(st.session_state.db_connection)
+            if not db_data.empty:
+                st.session_state.original_data = db_data.copy()
+                
+                # Perform oversampling for positive labels
+                positif_samples = db_data[db_data['Label'] == 'Positif']
+                negatif_samples = db_data[db_data['Label'] == 'Negatif']
+                
+                if len(positif_samples) < 7000:
+                    n_samples = 7000 - len(positif_samples)
+                    synthetic_samples = positif_samples.sample(n=n_samples, replace=True, random_state=42)
+                    db_data = pd.concat([db_data, synthetic_samples], ignore_index=True)
+                
+                st.session_state.data = db_data
+                st.session_state.data_loaded = True
+                st.session_state.sample_data_used = False
+                st.session_state.data_source = "database"
+                logger.info(f"Auto-loaded {len(db_data)} records from database")
+            else:
+                st.session_state.data_source = "none"
+                logger.info("No data found in database")
+        except Exception as e:
+            logger.error(f"Error auto-loading database data: {str(e)}")
+            st.session_state.data_source = "none"
+
     def render_login(self):
         """Render login form"""
         col1, col2, col3 = st.columns([1, 2, 1])
@@ -99,11 +131,25 @@ class Dashboard:
             </div>
         """, unsafe_allow_html=True)
         
+        # Display current data source status
+        if st.session_state.data_loaded:
+            data_source = st.session_state.get('data_source', 'unknown')
+            if data_source == "database":
+                st.info("**Current Active Data:** Database (auto-loaded)")
+            elif data_source == "csv":
+                st.info("**Current Active Data:** Uploaded CSV File")
+            elif data_source == "scraped":
+                st.info("**Current Active Data:** Scraped Data")
+            else:
+                st.info("**Current Active Data:** Database (auto-loaded)")
+        else:
+            st.warning("No data currently loaded")
+        
         tab1, tab2, tab3 = st.tabs(["Upload CSV", "Database Data", "Scrape Review"])
         
         with tab1:
             st.markdown("### Upload CSV File")
-            st.info("Upload a CSV file with 'Label' column")
+            st.info("Upload a CSV file with 'Label' column. This will switch active data to the uploaded file.")
             
             uploaded_file = st.file_uploader("Choose a CSV file", type="csv", help="Select a CSV file to upload")
             
@@ -144,10 +190,12 @@ class Dashboard:
                             else:
                                 st.error("Database connection not available")
                         
+                        # Switch active data to CSV
                         st.session_state.data = df
                         st.session_state.data_loaded = True
                         st.session_state.sample_data_used = False
-                        st.success("Data loaded successfully!")
+                        st.session_state.data_source = "csv"
+                        st.success("Data loaded successfully! Active data switched to uploaded CSV file.")
                         
                         # Display sample
                         st.markdown("### Data Preview")
@@ -161,43 +209,51 @@ class Dashboard:
                     st.error(f"Error loading CSV: {str(e)}")
         
         with tab2:
-            st.markdown("### Load Data from Database")
+            st.markdown("### Database Data")
+            st.info("Data is automatically loaded from database when the application starts.")
             
             if st.session_state.db_connection and st.session_state.db_connection.is_connected():
-                if st.button("Load All Database Data", use_container_width=True):
-                    try:
-                        db_data = fetch_data_from_db(st.session_state.db_connection)
-                        if not db_data.empty:
-                            st.session_state.original_data = db_data.copy()
-                            
-                            # Perform oversampling for positive labels
-                            positif_samples = db_data[db_data['Label'] == 'Positif']
-                            negatif_samples = db_data[db_data['Label'] == 'Negatif']
-                            
-                            if len(positif_samples) < 7000:
-                                n_samples = 7000 - len(positif_samples)
-                                synthetic_samples = positif_samples.sample(n=n_samples, replace=True, random_state=42)
-                                db_data = pd.concat([db_data, synthetic_samples], ignore_index=True)
-                                st.info(f"Oversampled positive labels to {len(db_data[db_data['Label'] == 'Positif'])} samples")
-                            
-                            st.session_state.data = db_data
-                            st.session_state.data_loaded = True
-                            st.session_state.sample_data_used = False
-                            st.success(f"Successfully loaded {len(db_data)} records from database")
-                            st.dataframe(db_data.head(10).style.set_properties(**{
-                                'background-color': '#f8f9fa',
-                                'border-radius': '10px',
-                                'padding': '10px'
-                            }))
-                        else:
-                            st.info("ℹ️ No data found in database")
-                    except Exception as e:
-                        st.error(f"Error loading database data: {str(e)}")
+                if st.session_state.data_loaded and st.session_state.get('data_source') == "database":
+                    st.success("Database data is currently active")
+                    
+                    # Show current data info
+                    if 'original_data' in st.session_state and st.session_state.original_data is not None:
+                        st.markdown("#### Original Database Data Info")
+                        original_data = st.session_state.original_data
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Total Records (Original)", len(original_data))
+                        with col2:
+                            positif_count = len(original_data[original_data['Label'] == 'Positif'])
+                            st.metric("Positive (Original)", positif_count)
+                        with col3:
+                            negatif_count = len(original_data[original_data['Label'] == 'Negatif'])
+                            st.metric("Negative (Original)", negatif_count)
+                        
+                        if 'data' in st.session_state and st.session_state.data is not None:
+                            st.info(f"ℹFor model training, the positive class is oversampled to {len(st.session_state.data[st.session_state.data['Label'] == 'Positif'])} samples to balance the dataset.")
+
+                        # Option to refresh database data
+                        if st.button("Refresh Database Data", use_container_width=True):
+                            self._load_database_data()
+                            st.success("Database data refreshed!")
+                            st.rerun()
+                else:
+                    st.info("ℹDatabase data is not currently active. Upload CSV or scrape data to switch active data.")
+                    
+                    # Option to switch back to database data
+                    if st.button("Switch to Database Data", use_container_width=True):
+                        self._load_database_data()
+                        if st.session_state.data_loaded:
+                            st.success("Switched to database data!")
+                            st.rerun()
             else:
                 st.error("Database connection not available")
 
         with tab3:
             st.markdown("### Scrape Google Playstore Reviews")
+            st.info("Scrape reviews from Google Play Store. This will switch active data to the scraped data.")
+            
             app_id = st.text_input("Masukkan App ID", value="app.bpjs.mobile")
             num_reviews = st.slider("Jumlah Review", 1000, 10000, 5000)
 
@@ -220,11 +276,13 @@ class Dashboard:
                     df['text_tokens'] = df['text_StopWord']
                     df['text_steamindo'] = df['text_tokens']
 
+                    # Switch active data to scraped data
                     st.session_state.data = df
                     st.session_state.original_data = df.copy()
                     st.session_state.data_loaded = True
+                    st.session_state.data_source = "scraped"
 
-                    st.success("Berhasil ambil dan proses data")
+                    st.success("Berhasil ambil dan proses data! Active data switched to scraped data.")
                     st.dataframe(df.head())
 
                     if st.checkbox("Simpan ke database"):
@@ -249,6 +307,17 @@ class Dashboard:
         if not st.session_state.data_loaded:
             st.warning("Please load or input data first")
             return
+        
+        # Display current data source
+        data_source = st.session_state.get('data_source', 'unknown')
+        if data_source == "database":
+            st.info("**Analyzing:** Database Data (auto-loaded)")
+        elif data_source == "csv":
+            st.info("**Analyzing:** Uploaded CSV File")
+        elif data_source == "scraped":
+            st.info("**Analyzing:** Scraped Data")
+        else:
+            st.info("**Analyzing:** Database Data (auto-loaded)")
         
         # Display sentiment distribution
         st.markdown("### Sentiment Distribution")
@@ -281,6 +350,30 @@ class Dashboard:
                 'border-radius': '10px',
                 'padding': '10px'
             }))
+            
+        st.markdown("---")
+        st.markdown("### Browse Data")
+        
+        # Use original_data for viewing to show data before oversampling
+        data_to_view = st.session_state.original_data if 'original_data' in st.session_state else st.session_state.data
+        
+        search_query = st.text_input("Search in review content:", placeholder="Type here to search...")
+        
+        if search_query:
+            # Filter data based on search query (case-insensitive)
+            filtered_data = data_to_view[data_to_view['content'].str.contains(search_query, case=False, na=False)]
+            st.dataframe(filtered_data.style.set_properties(**{
+                'background-color': '#f8f9fa',
+                'border-radius': '10px',
+                'padding': '10px'
+            }))
+        else:
+            # Show all data if search query is empty
+            st.dataframe(data_to_view.style.set_properties(**{
+                'background-color': '#f8f9fa',
+                'border-radius': '10px',
+                'padding': '10px'
+            }))
 
     def render_model_performance(self):
         """Render model performance metrics"""
@@ -293,6 +386,17 @@ class Dashboard:
         if not st.session_state.data_loaded:
             st.warning("Please load or input data first")
             return
+        
+        # Display current data source
+        data_source = st.session_state.get('data_source', 'unknown')
+        if data_source == "database":
+            st.info("**Training Model on:** Database Data (auto-loaded)")
+        elif data_source == "csv":
+            st.info("**Training Model on:** Uploaded CSV File")
+        elif data_source == "scraped":
+            st.info("**Training Model on:** Scraped Data")
+        else:
+            st.info("**Training Model on:** Database Data (auto-loaded)")
         
         if len(st.session_state.data) < 10:
             st.warning("Insufficient data for model training. Please add more data (at least 10 entries).")
@@ -345,6 +449,21 @@ class Dashboard:
             </div>
         """, unsafe_allow_html=True)
         
+        if not st.session_state.data_loaded:
+            st.warning("Please load or input data first to train the model")
+            return
+        
+        # Display current data source
+        data_source = st.session_state.get('data_source', 'unknown')
+        if data_source == "database":
+            st.info("**Model trained on:** Database Data (auto-loaded)")
+        elif data_source == "csv":
+            st.info("**Model trained on:** Uploaded CSV File")
+        elif data_source == "scraped":
+            st.info("**Model trained on:** Scraped Data")
+        else:
+            st.info("**Model trained on:** Database Data (auto-loaded)")
+        
         user_input = st.text_area(
             "Enter text for analysis:",
             placeholder="Type your text here...",
@@ -356,10 +475,6 @@ class Dashboard:
         if st.button('Analyze Sentiment', use_container_width=True):
             if not user_input:
                 st.warning('Please enter some text to analyze')
-                return
-                
-            if not st.session_state.data_loaded:
-                st.warning("Please load or input data first to train the model")
                 return
                 
             try:
@@ -433,6 +548,17 @@ class Dashboard:
             st.warning("Please load or input data first")
             return
         
+        # Display current data source
+        data_source = st.session_state.get('data_source', 'unknown')
+        if data_source == "database":
+            st.info("**Generating Word Cloud from:** Database Data (auto-loaded)")
+        elif data_source == "csv":
+            st.info("**Generating Word Cloud from:** Uploaded CSV File")
+        elif data_source == "scraped":
+            st.info("**Generating Word Cloud from:** Scraped Data")
+        else:
+            st.info("**Generating Word Cloud from:** Database Data (auto-loaded)")
+        
         sentiment = st.radio(
             'Choose sentiment to visualize:',
             ['Positive', 'Negative'],
@@ -441,14 +567,20 @@ class Dashboard:
         
         try:
             # Filter data based on sentiment
-            text_data = ' '.join(
-                st.session_state.data[st.session_state.data['Label'] == 
-                         ('Positif' if sentiment == 'Positive' else 'Negatif')]
-                ['text_steamindo']
-            )
+            sentiment_label = 'Positif' if sentiment == 'Positive' else 'Negatif'
+            filtered_df = st.session_state.data[st.session_state.data['Label'] == sentiment_label]
+
+            # Ensure text_steamindo exists and handle missing values
+            if 'text_steamindo' not in filtered_df.columns:
+                st.error("Column 'text_steamindo' not found in the data.")
+                return
+
+            # Get text data, drop NaNs, convert to string, and join
+            text_series = filtered_df['text_steamindo'].dropna().astype(str)
+            text_data = ' '.join(text_series)
             
-            if not text_data:
-                st.warning(f"No {sentiment.lower()} sentiment data available")
+            if not text_data.strip():
+                st.warning(f"No {sentiment.lower()} sentiment data available to generate a word cloud.")
                 return
             
             # Generate word cloud

@@ -19,6 +19,8 @@ class SentimentAnalyzer:
     def preprocess_text(self, text: str) -> str:
         """Clean and preprocess text data"""
         try:
+            if not isinstance(text, str):
+                return ""
             # Remove HTML tags
             text = re.sub('<[^>]*>', '', text)
             # Extract emoticons
@@ -31,7 +33,7 @@ class SentimentAnalyzer:
             return text.strip()
         except Exception as e:
             logger.error(f"Error in text preprocessing: {str(e)}")
-            raise
+            return ""
 
     def train_model(self, X_train: pd.Series, y_train: pd.Series) -> Tuple:
         """Train the sentiment analysis model"""

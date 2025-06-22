@@ -97,8 +97,11 @@ def render_sidebar():
                 ('', 'Word Cloud')
             ]
         else:
-            menu_items = [('', 'Sentiment Prediction')]
-            st.session_state.current_page = 'Sentiment Prediction'
+            menu_items = [
+                ('', 'Data Input'),
+                ('', 'Data Overview'),
+                ('', 'Sentiment Prediction')
+            ]
 
         st.markdown("#### Database Status")
         with st.expander("Database Status", expanded=False):
@@ -137,6 +140,8 @@ def render_navbar_compact():
         }
     else:
         pages = {
+            "Data Input": "",
+            "Data Overview": "",
             "Sentiment Prediction": ""
         }
 
@@ -189,17 +194,34 @@ def main():
     render_navbar_compact()
 
     page = st.session_state.current_page
+    
+    # Set default page for users if not set
+    if not page:
+        if st.session_state.role == 'admin':
+            st.session_state.current_page = 'Data Input'
+        else:
+            st.session_state.current_page = 'Data Input'
+        page = st.session_state.current_page
+    
     with st.container():
         if page == 'Data Input':
             dashboard.render_data_input()
         elif page == 'Data Overview':
             dashboard.render_data_overview()
         elif page == 'Model Performance':
-            dashboard.render_model_performance()
+            if st.session_state.role == 'admin':
+                dashboard.render_model_performance()
+            else:
+                st.error("Access denied. Admin privileges required.")
         elif page == 'Sentiment Prediction':
             dashboard.render_sentiment_prediction()
         elif page == 'Word Cloud':
-            dashboard.render_wordcloud()
+            if st.session_state.role == 'admin':
+                dashboard.render_wordcloud()
+            else:
+                st.error("Access denied. Admin privileges required.")
+        else:
+            st.error("Page not found")
 
 if __name__ == "__main__":
     main()

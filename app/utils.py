@@ -20,6 +20,8 @@ def init_session_state():
         st.session_state.update({
             'logged_in': False,
             'role': None,
+            'username': None,
+            'user_id': None,
             'notifications': [],
             'model': None,
             'vectorizer': None,

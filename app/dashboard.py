@@ -7,9 +7,8 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from sklearn.model_selection import train_test_split
 from wordcloud import WordCloud
 from models import SentimentAnalyzer
-from database import create_db_connection, fetch_data_from_db, insert_data_to_db, batch_insert_to_db
+from database import create_db_connection, fetch_data_from_db, insert_data_to_db, batch_insert_to_db, register_user, authenticate_user
 from utils import get_csv_download_link
-from config import users
 import hashlib
 
 # Configure logging
@@ -97,7 +96,7 @@ class Dashboard:
             st.session_state.data_source = "none"
 
     def render_login(self):
-        """Render login form"""
+        """Render login form with registration option"""
         col1, col2, col3 = st.columns([1, 2, 1])
         
         with col2:
@@ -107,21 +106,74 @@ class Dashboard:
                 </div>
             """, unsafe_allow_html=True)
             
-            with st.container():
-                st.markdown("### Login")
-                username = st.text_input('Username', placeholder='Enter your username')
-                password = st.text_input('Password', type='password', placeholder='Enter your password')
-                
-                if st.button('Login', use_container_width=True):
-                    hashed_password = hashlib.sha256(password.encode()).hexdigest()
-                    if (username in users and 
-                        users[username]['password'] == hashed_password):
-                        st.session_state.logged_in = True
-                        st.session_state.role = users[username]['role']
-                        st.success("Login successful!")
-                        st.rerun()
-                    else:
-                        st.error('Invalid credentials')
+            # Create tabs for login and registration
+            tab1, tab2 = st.tabs(["Login", "Register"])
+            
+            with tab1:
+                with st.container():
+                    st.markdown("### Login")
+                    username = st.text_input('Username', placeholder='Enter your username', key='login_username')
+                    password = st.text_input('Password', type='password', placeholder='Enter your password', key='login_password')
+                    
+                    if st.button('Login', use_container_width=True, key='login_button'):
+                        if st.session_state.db_connection and st.session_state.db_connection.is_connected():
+                            success, user_data = authenticate_user(st.session_state.db_connection, username, password)
+                            if success:
+                                st.session_state.logged_in = True
+                                st.session_state.role = user_data['role']
+                                st.session_state.username = user_data['username']
+                                st.session_state.user_id = user_data['id']
+                                st.success("Login successful!")
+                                st.rerun()
+                            else:
+                                st.error('Invalid credentials')
+                        else:
+                            st.error('Database connection not available')
+            
+            with tab2:
+                with st.container():
+                    st.markdown("### Register New Account")
+                    
+                    reg_username = st.text_input('Username', placeholder='Choose a username', key='reg_username')
+                    reg_email = st.text_input('Email (optional)', placeholder='Enter your email', key='reg_email')
+                    reg_password = st.text_input('Password', type='password', placeholder='Choose a password', key='reg_password')
+                    reg_confirm_password = st.text_input('Confirm Password', type='password', placeholder='Confirm your password', key='reg_confirm_password')
+                    
+                    # Password validation
+                    password_requirements = """
+                    **Password Requirements:**
+                    - At least 6 characters long
+                    - Contains at least one letter and one number
+                    """
+                    st.markdown(password_requirements)
+                    
+                    if st.button('Register', use_container_width=True, key='register_button'):
+                        # Validation
+                        if not reg_username or not reg_password:
+                            st.error('Username and password are required')
+                        elif reg_password != reg_confirm_password:
+                            st.error('Passwords do not match')
+                        elif len(reg_password) < 6:
+                            st.error('Password must be at least 6 characters long')
+                        elif not any(c.isalpha() for c in reg_password) or not any(c.isdigit() for c in reg_password):
+                            st.error('Password must contain at least one letter and one number')
+                        elif reg_email and '@' not in reg_email:
+                            st.error('Please enter a valid email address')
+                        else:
+                            if st.session_state.db_connection and st.session_state.db_connection.is_connected():
+                                success, message = register_user(
+                                    st.session_state.db_connection, 
+                                    reg_username, 
+                                    reg_password, 
+                                    reg_email if reg_email else None
+                                )
+                                if success:
+                                    st.success(message)
+                                    st.info("You can now login with your new account")
+                                else:
+                                    st.error(message)
+                            else:
+                                st.error('Database connection not available')
 
     def render_data_input(self):
         """Render data input section"""
@@ -537,7 +589,7 @@ class Dashboard:
                 st.error("An error occurred during analysis. Please try again.")
 
     def render_wordcloud(self):
-        """Render word cloud visualization"""
+        """Render wordcloud visualization"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
                 <h1 style='color: #2c3e50;'>Word Cloud Visualization</h1>
@@ -545,60 +597,66 @@ class Dashboard:
         """, unsafe_allow_html=True)
         
         if not st.session_state.data_loaded:
-            st.warning("Please load or input data first")
+            st.warning("Please load data first")
             return
         
-        # Display current data source
-        data_source = st.session_state.get('data_source', 'unknown')
-        if data_source == "database":
-            st.info("**Generating Word Cloud from:** Database Data (auto-loaded)")
-        elif data_source == "csv":
-            st.info("**Generating Word Cloud from:** Uploaded CSV File")
-        elif data_source == "scraped":
-            st.info("**Generating Word Cloud from:** Scraped Data")
-        else:
-            st.info("**Generating Word Cloud from:** Database Data (auto-loaded)")
+        # Create tabs for positive and negative word clouds
+        tab1, tab2 = st.tabs(["Positive Sentiment", "Negative Sentiment"])
         
-        sentiment = st.radio(
-            'Choose sentiment to visualize:',
-            ['Positive', 'Negative'],
-            horizontal=True
-        )
+        with tab1:
+            st.markdown("### Positive Sentiment Word Cloud")
+            positive_data = st.session_state.data[st.session_state.data['Label'] == 'Positif']
+            if not positive_data.empty:
+                # Combine all positive text
+                positive_text = ' '.join(positive_data['text_clean'].astype(str))
+                
+                # Create word cloud
+                wordcloud = WordCloud(
+                    width=800, 
+                    height=400, 
+                    background_color='white',
+                    colormap='Greens',
+                    max_words=100
+                ).generate(positive_text)
+                
+                # Display
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.imshow(wordcloud, interpolation='bilinear')
+                ax.axis('off')
+                st.pyplot(fig)
+                
+                # Save option
+                if st.button("Save Positive Word Cloud", key="save_pos_wordcloud"):
+                    wordcloud.to_file("images/wordcloud_positif.png")
+                    st.success("Word cloud saved as 'images/wordcloud_positif.png'")
+            else:
+                st.warning("No positive sentiment data available")
         
-        try:
-            # Filter data based on sentiment
-            sentiment_label = 'Positif' if sentiment == 'Positive' else 'Negatif'
-            filtered_df = st.session_state.data[st.session_state.data['Label'] == sentiment_label]
-
-            # Ensure text_steamindo exists and handle missing values
-            if 'text_steamindo' not in filtered_df.columns:
-                st.error("Column 'text_steamindo' not found in the data.")
-                return
-
-            # Get text data, drop NaNs, convert to string, and join
-            text_series = filtered_df['text_steamindo'].dropna().astype(str)
-            text_data = ' '.join(text_series)
-            
-            if not text_data.strip():
-                st.warning(f"No {sentiment.lower()} sentiment data available to generate a word cloud.")
-                return
-            
-            # Generate word cloud
-            wordcloud = WordCloud(
-                width=800, height=400,
-                background_color="white",
-                colormap="Greens" if sentiment == 'Positive' else "Reds",
-                max_words=100,
-                contour_width=3,
-                contour_color='steelblue'
-            ).generate(text_data)
-            
-            # Display word cloud
-            fig, ax = plt.subplots(figsize=(10, 5))
-            ax.imshow(wordcloud, interpolation="bilinear")
-            ax.axis("off")
-            st.pyplot(fig)
-            
-        except Exception as e:
-            logger.error(f"Error generating word cloud: {str(e)}")
-            st.error("Failed to generate word cloud visualization") 
+        with tab2:
+            st.markdown("### Negative Sentiment Word Cloud")
+            negative_data = st.session_state.data[st.session_state.data['Label'] == 'Negatif']
+            if not negative_data.empty:
+                # Combine all negative text
+                negative_text = ' '.join(negative_data['text_clean'].astype(str))
+                
+                # Create word cloud
+                wordcloud = WordCloud(
+                    width=800, 
+                    height=400, 
+                    background_color='white',
+                    colormap='Reds',
+                    max_words=100
+                ).generate(negative_text)
+                
+                # Display
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.imshow(wordcloud, interpolation='bilinear')
+                ax.axis('off')
+                st.pyplot(fig)
+                
+                # Save option
+                if st.button("Save Negative Word Cloud", key="save_neg_wordcloud"):
+                    wordcloud.to_file("images/wordcloud_negatif.png")
+                    st.success("Word cloud saved as 'images/wordcloud_negatif.png'")
+            else:
+                st.warning("No negative sentiment data available") 

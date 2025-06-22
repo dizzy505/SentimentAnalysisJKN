@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
 
-from database import create_db_connection, register_user, authenticate_user
+from app.database import create_db_connection, register_user, authenticate_user
 
 def test_registration():
     """Test the user registration system"""

@@ -2,7 +2,7 @@ import streamlit as st
 
 # ==== PAGE CONFIG ====
 st.set_page_config(
-    page_title="Mobile JKN Sentiment Analysis",
+    page_title="Analisis Sentimen Mobile JKN",
     page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
@@ -86,7 +86,7 @@ body {
 # ==== SIDEBAR ====
 def render_sidebar():
     with st.sidebar:
-        st.markdown("### Settings")
+        st.markdown("### Pengaturan")
 
         if st.session_state.role == 'admin':
             menu_items = [
@@ -106,9 +106,9 @@ def render_sidebar():
         st.markdown("#### Database Status")
         with st.expander("Database Status", expanded=False):
             if st.session_state.db_connection and st.session_state.db_connection.is_connected():
-                st.success("Connected to MySQL")
+                st.success("Database terhubung")
             else:
-                st.error("Not connected to MySQL")
+                st.error("Database tidak terhubung")
                 if st.button("Reconnect", use_container_width=True):
                     st.session_state.db_connection = create_db_connection()
                     st.rerun()
@@ -124,7 +124,7 @@ def render_sidebar():
 def render_header():
     st.markdown("""
     <div class="main-header">
-        <h1>Mobile JKN Sentiment Analysis</h1>
+        <h1>Analisis Sentimen Mobile JKN</h1>
     </div>
     """, unsafe_allow_html=True)
 
@@ -212,16 +212,16 @@ def main():
             if st.session_state.role == 'admin':
                 dashboard.render_model_performance()
             else:
-                st.error("Access denied. Admin privileges required.")
+                st.error("Akses ditolak. Admin privileges required.")
         elif page == 'Sentiment Prediction':
             dashboard.render_sentiment_prediction()
         elif page == 'Word Cloud':
             if st.session_state.role == 'admin':
                 dashboard.render_wordcloud()
             else:
-                st.error("Access denied. Admin privileges required.")
+                st.error("Akses ditolak. Admin privileges required.")
         else:
-            st.error("Page not found")
+            st.error("Halaman tidak ditemukan")
 
 if __name__ == "__main__":
     main()

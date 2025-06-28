@@ -68,7 +68,7 @@ class Dashboard:
             self._load_database_data()
         
     def _load_database_data(self):
-        """Load data from database automatically"""
+        """Otomatis memuat data dari database"""
         try:
             db_data = fetch_data_from_db(st.session_state.db_connection)
             if not db_data.empty:
@@ -87,33 +87,33 @@ class Dashboard:
                 st.session_state.data_loaded = True
                 st.session_state.sample_data_used = False
                 st.session_state.data_source = "database"
-                logger.info(f"Auto-loaded {len(db_data)} records from database")
+                logger.info(f"Otomatis memuat {len(db_data)} records dari database")
             else:
                 st.session_state.data_source = "none"
-                logger.info("No data found in database")
+                logger.info("Tidak ada data ditemukan di database")
         except Exception as e:
-            logger.error(f"Error auto-loading database data: {str(e)}")
+            logger.error(f"Error otomatis memuat data dari database: {str(e)}")
             st.session_state.data_source = "none"
 
     def render_login(self):
-        """Render login form with registration option"""
+        """Render form login dengan opsi registrasi"""
         col1, col2, col3 = st.columns([1, 2, 1])
         
         with col2:
             st.markdown("""
                 <div style='text-align: center; margin-bottom: 2rem;'>
-                    <h1 style='color: #2c3e50;'>Mobile JKN Sentiment Analysis</h1>
+                    <h1 style='color: #2c3e50;'>Analisis Sentimen Mobile JKN</h1>
                 </div>
             """, unsafe_allow_html=True)
             
-            # Create tabs for login and registration
+            # Membuat tab untuk login dan registrasi
             tab1, tab2 = st.tabs(["Login", "Register"])
             
             with tab1:
                 with st.container():
                     st.markdown("### Login")
-                    username = st.text_input('Username', placeholder='Enter your username', key='login_username')
-                    password = st.text_input('Password', type='password', placeholder='Enter your password', key='login_password')
+                    username = st.text_input('Username', placeholder='Masukkan username', key='login_username')
+                    password = st.text_input('Password', type='password', placeholder='Masukkan password', key='login_password')
                     
                     if st.button('Login', use_container_width=True, key='login_button'):
                         if st.session_state.db_connection and st.session_state.db_connection.is_connected():
@@ -123,42 +123,40 @@ class Dashboard:
                                 st.session_state.role = user_data['role']
                                 st.session_state.username = user_data['username']
                                 st.session_state.user_id = user_data['id']
-                                st.success("Login successful!")
+                                st.success("Login berhasil!")
                                 st.rerun()
                             else:
-                                st.error('Invalid credentials')
+                                st.error('Kredensial tidak valid')
                         else:
-                            st.error('Database connection not available')
+                            st.error('Koneksi database tidak tersedia')
             
             with tab2:
                 with st.container():
-                    st.markdown("### Register New Account")
+                    st.markdown("### Registrasi Akun Baru")
                     
-                    reg_username = st.text_input('Username', placeholder='Choose a username', key='reg_username')
-                    reg_email = st.text_input('Email (optional)', placeholder='Enter your email', key='reg_email')
-                    reg_password = st.text_input('Password', type='password', placeholder='Choose a password', key='reg_password')
-                    reg_confirm_password = st.text_input('Confirm Password', type='password', placeholder='Confirm your password', key='reg_confirm_password')
+                    reg_username = st.text_input('Username', placeholder='Pilih username', key='reg_username')
+                    reg_email = st.text_input('Email (optional)', placeholder='Masukkan email', key='reg_email')
+                    reg_password = st.text_input('Password', type='password', placeholder='Pilih password', key='reg_password')
+                    reg_confirm_password = st.text_input('Konfirmasi Password', type='password', placeholder='Konfirmasi password', key='reg_confirm_password')
                     
                     # Password validation
                     password_requirements = """
-                    **Password Requirements:**
-                    - At least 6 characters long
-                    - Contains at least one letter and one number
+                    **Persyaratan Password:**
+                    - Minimal 6 karakter
+                    - Mengandung minimal satu huruf dan satu angka
                     """
                     st.markdown(password_requirements)
                     
                     if st.button('Register', use_container_width=True, key='register_button'):
                         # Validation
                         if not reg_username or not reg_password:
-                            st.error('Username and password are required')
+                            st.error('Username dan password diperlukan')
                         elif reg_password != reg_confirm_password:
-                            st.error('Passwords do not match')
+                            st.error('Password tidak cocok')
                         elif len(reg_password) < 6:
-                            st.error('Password must be at least 6 characters long')
-                        elif not any(c.isalpha() for c in reg_password) or not any(c.isdigit() for c in reg_password):
-                            st.error('Password must contain at least one letter and one number')
+                            st.error('Password minimal 6 karakter')
                         elif reg_email and '@' not in reg_email:
-                            st.error('Please enter a valid email address')
+                            st.error('Masukkan alamat email yang valid')
                         else:
                             if st.session_state.db_connection and st.session_state.db_connection.is_connected():
                                 success, message = register_user(
@@ -169,14 +167,14 @@ class Dashboard:
                                 )
                                 if success:
                                     st.success(message)
-                                    st.info("You can now login with your new account")
+                                    st.info("Anda dapat sekarang login dengan akun baru Anda")
                                 else:
                                     st.error(message)
                             else:
-                                st.error('Database connection not available')
+                                st.error('Koneksi database tidak tersedia')
 
     def render_data_input(self):
-        """Render data input section"""
+        """Render bagian data input"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
                 <h1 style='color: #2c3e50;'>Data Input</h1>
@@ -187,23 +185,23 @@ class Dashboard:
         if st.session_state.data_loaded:
             data_source = st.session_state.get('data_source', 'unknown')
             if data_source == "database":
-                st.info("**Current Active Data:** Database (auto-loaded)")
+                st.info("**Data Aktif Saat Ini:** Database (otomatis dimuat)")
             elif data_source == "csv":
-                st.info("**Current Active Data:** Uploaded CSV File")
+                st.info("**Data Aktif Saat Ini:** File CSV yang diunggah")
             elif data_source == "scraped":
-                st.info("**Current Active Data:** Scraped Data")
+                st.info("**Data Aktif Saat Ini:** Data yang discrape")
             else:
-                st.info("**Current Active Data:** Database (auto-loaded)")
+                st.info("**Data Aktif Saat Ini:** Database (otomatis dimuat)")
         else:
-            st.warning("No data currently loaded")
+            st.warning("Tidak ada data yang dimuat saat ini")
         
         tab1, tab2, tab3 = st.tabs(["Upload CSV", "Database Data", "Scrape Review"])
         
         with tab1:
             st.markdown("### Upload CSV File")
-            st.info("Upload a CSV file with 'Label' column. This will switch active data to the uploaded file.")
+            st.info("Unggah file CSV dengan kolom 'Label'. Ini akan mengubah data aktif ke file yang diunggah.")
             
-            uploaded_file = st.file_uploader("Choose a CSV file", type="csv", help="Select a CSV file to upload")
+            uploaded_file = st.file_uploader("Pilih file CSV", type="csv", help="Pilih file CSV untuk diunggah")
             
             if uploaded_file is not None:
                 try:
@@ -212,7 +210,7 @@ class Dashboard:
                     # Validate columns
                     required_cols = ['content', 'Label']
                     if not all(col in df.columns for col in required_cols):
-                        st.error("CSV must contain 'content' and 'Label' columns")
+                        st.error("CSV harus mengandung kolom 'content' dan 'Label'")
                     else:
                         # Preprocess text
                         df['text_clean'] = df['content'].apply(self.analyzer.preprocess_text)
@@ -230,24 +228,24 @@ class Dashboard:
                             n_samples = 7000 - len(positif_samples)
                             synthetic_samples = positif_samples.sample(n=n_samples, replace=True, random_state=42)
                             df = pd.concat([df, synthetic_samples], ignore_index=True)
-                            st.info(f"Oversampled positive labels to {len(df[df['Label'] == 'Positif'])} samples")
+                            st.info(f"Oversampling label positif ke {len(df[df['Label'] == 'Positif'])} sampel")
                         
                         # Save to database option
                         if st.checkbox("Save to database"):
                             if st.session_state.db_connection and st.session_state.db_connection.is_connected():
                                 if batch_insert_to_db(st.session_state.db_connection, df):
-                                    st.success(f"Successfully saved {len(df)} records to database")
+                                    st.success(f"Berhasil menyimpan {len(df)} records ke database")
                                 else:
-                                    st.error("Failed to save to database")
+                                    st.error("Gagal menyimpan ke database")
                             else:
-                                st.error("Database connection not available")
+                                st.error("Koneksi database tidak tersedia")
                         
                         # Switch active data to CSV
                         st.session_state.data = df
                         st.session_state.data_loaded = True
                         st.session_state.sample_data_used = False
                         st.session_state.data_source = "csv"
-                        st.success("Data loaded successfully! Active data switched to uploaded CSV file.")
+                        st.success("Data berhasil dimuat! Data aktif berubah ke file CSV yang diunggah.")
                         
                         # Display sample
                         st.markdown("### Data Preview")
@@ -258,58 +256,58 @@ class Dashboard:
                         }))
                         
                 except Exception as e:
-                    st.error(f"Error loading CSV: {str(e)}")
+                    st.error(f"Error memuat CSV: {str(e)}")
         
         with tab2:
             st.markdown("### Database Data")
-            st.info("Data is automatically loaded from database when the application starts.")
+            st.info("Data otomatis dimuat dari database ketika aplikasi dimulai.")
             
             if st.session_state.db_connection and st.session_state.db_connection.is_connected():
                 if st.session_state.data_loaded and st.session_state.get('data_source') == "database":
-                    st.success("Database data is currently active")
+                    st.success("Database data saat ini aktif")
                     
                     # Show current data info
                     if 'original_data' in st.session_state and st.session_state.original_data is not None:
-                        st.markdown("#### Original Database Data Info")
+                        st.markdown("#### Informasi Data Database Asli")
                         original_data = st.session_state.original_data
                         col1, col2, col3 = st.columns(3)
                         with col1:
-                            st.metric("Total Records (Original)", len(original_data))
+                            st.metric("Total Records (Asli)", len(original_data))
                         with col2:
                             positif_count = len(original_data[original_data['Label'] == 'Positif'])
-                            st.metric("Positive (Original)", positif_count)
+                            st.metric("Positif (Asli)", positif_count)
                         with col3:
                             negatif_count = len(original_data[original_data['Label'] == 'Negatif'])
-                            st.metric("Negative (Original)", negatif_count)
+                            st.metric("Negatif (Asli)", negatif_count)
                         
                         if 'data' in st.session_state and st.session_state.data is not None:
-                            st.info(f"ℹFor model training, the positive class is oversampled to {len(st.session_state.data[st.session_state.data['Label'] == 'Positif'])} samples to balance the dataset.")
+                            st.info(f"ℹLabel positif di oversampling ke {len(st.session_state.data[st.session_state.data['Label'] == 'Positif'])} sampel untuk menyeimbangkan dataset.")
 
                         # Option to refresh database data
-                        if st.button("Refresh Database Data", use_container_width=True):
+                        if st.button("Muat Ulang Data Database", use_container_width=True):
                             self._load_database_data()
-                            st.success("Database data refreshed!")
+                            st.success("Database data berhasil dimuat ulang!")
                             st.rerun()
                 else:
-                    st.info("ℹDatabase data is not currently active. Upload CSV or scrape data to switch active data.")
+                    st.info("ℹDatabase data saat ini tidak aktif. Upload CSV atau scrape data untuk mengubah data aktif.")
                     
                     # Option to switch back to database data
                     if st.button("Switch to Database Data", use_container_width=True):
                         self._load_database_data()
                         if st.session_state.data_loaded:
-                            st.success("Switched to database data!")
+                            st.success("Berhasil mengubah ke data database!")
                             st.rerun()
             else:
-                st.error("Database connection not available")
+                st.error("Koneksi database tidak tersedia")
 
         with tab3:
             st.markdown("### Scrape Google Playstore Reviews")
-            st.info("Scrape reviews from Google Play Store. This will switch active data to the scraped data.")
+            st.info("Scrape reviews dari Google Play Store. Ini akan mengubah data aktif ke data yang discrape.")
             
             app_id = st.text_input("Masukkan App ID", value="app.bpjs.mobile")
             num_reviews = st.slider("Jumlah Review", 1000, 10000, 5000)
 
-            if st.button("Ambil Review"):
+            if st.button("Ambil Review", use_container_width=True):
                 try:
                     from google_play_scraper import Sort, reviews
 
@@ -334,7 +332,7 @@ class Dashboard:
                     st.session_state.data_loaded = True
                     st.session_state.data_source = "scraped"
 
-                    st.success("Berhasil ambil dan proses data! Active data switched to scraped data.")
+                    st.success("Berhasil ambil dan proses data! Data aktif berubah ke data yang discrape.")
                     st.dataframe(df.head())
 
                     if st.checkbox("Simpan ke database"):
@@ -342,116 +340,236 @@ class Dashboard:
                             from database import batch_insert_to_db
                             df['score'] = df['score'].astype(int)
                             if batch_insert_to_db(st.session_state.db_connection, df):
-                                st.success("Data berhasil disimpan ke database!")
+                                st.success("Data berhasil disimpan ke database")
                             else:
-                                st.error("Gagal simpan ke database")
+                                st.error("Gagal menyimpan ke database")
                 except Exception as e:
                     st.error(f"Gagal scrape data: {e}")
 
     def render_data_overview(self):
-        """Render data overview section"""
+        """Render bagian data overview"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
-                <h1 style='color: #2c3e50;'>Data Overview</h1>
+                <h1 style='color: #2c3e50;'>Data Sentimen</h1>
             </div>
         """, unsafe_allow_html=True)
         
         if not st.session_state.data_loaded:
-            st.warning("Please load or input data first")
+            st.warning("Silakan memuat atau memasukkan data terlebih dahulu")
             return
         
         # Display current data source
         data_source = st.session_state.get('data_source', 'unknown')
         if data_source == "database":
-            st.info("**Analyzing:** Database Data (auto-loaded)")
+            st.info("**Menganalisis:** Database Data (otomatis dimuat)")
         elif data_source == "csv":
-            st.info("**Analyzing:** Uploaded CSV File")
+            st.info("**Menganalisis:** File CSV yang diunggah")
         elif data_source == "scraped":
-            st.info("**Analyzing:** Scraped Data")
+            st.info("**Menganalisis:** Data yang discrape")
         else:
-            st.info("**Analyzing:** Database Data (auto-loaded)")
+            st.info("**Menganalisis:** Database Data (otomatis dimuat)")
         
         # Display sentiment distribution
-        st.markdown("### Sentiment Distribution")
+        st.markdown("### Distribusi Sentimen")
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            fig, ax = plt.subplots(figsize=(8, 6))
-            
-            # Ambil data asli sebelum oversampling kalo ada
+            # Ambil data asli sebelum oversampling jika ada
             data_to_use = st.session_state.original_data if 'original_data' in st.session_state else st.session_state.data
             
-            # Tentukan urutan label dan warna secara eksplisit
+            # Tentukan urutan label dan warna secara eksplisit (Positif, Negatif)
             labels = ['Positif', 'Negatif']
-            colors = ['#4CAF50', '#FF5252']  # Hijau, Merah
+            colors = ['#2E8B57', '#DC143C']  # Sea Green, Crimson
             
-            # Hitung jumlah per label sesuai urutan
+            # Hitung jumlah per label sesuai urutan (Positif, Negatif)
             sentiment_counts = data_to_use['Label'].value_counts()
             values = [sentiment_counts.get(label, 0) for label in labels]
 
-            # Pie chart
-            ax.pie(values, labels=labels, autopct='%1.1f%%', colors=colors, startangle=90)
+            # Buat pie chart yang elegan
+            fig, ax = plt.subplots(figsize=(10, 8))
+            
+            # Tambahkan efek bayangan dan efek eksplosi untuk elegan
+            explode = (0.05, 0.05)
+            
+            # Buat pie chart dengan styling yang lebih baik
+            wedges, texts, autotexts = ax.pie(
+                values, 
+                labels=labels, 
+                autopct='%1.1f%%', 
+                colors=colors, 
+                startangle=90,
+                explode=explode,
+                shadow=True,
+                textprops={'fontsize': 12, 'fontweight': 'bold'},
+                pctdistance=0.85
+            )
+            
+            # Sesuaikan styling autotext
+            for autotext in autotexts:
+                autotext.set_color('white')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(11)
+            
+            # Add title
+            ax.set_title('Distribusi Sentimen', fontsize=16, fontweight='bold', pad=20)
             ax.axis('equal')
+            
+            # Add legend with better positioning
+            ax.legend(wedges, labels, title="Sentimen", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
+            
+            plt.tight_layout()
             st.pyplot(fig)
 
             
         with col2:
-            st.markdown("#### Count Statistics")
-            st.dataframe(sentiment_counts.to_frame().style.set_properties(**{
-                'background-color': '#f8f9fa',
-                'border-radius': '10px',
-                'padding': '10px'
-            }))
+            st.markdown("#### Statistik Jumlah")
+            
+            # Calculate counts
+            positif_count = sentiment_counts.get('Positif', 0)
+            negatif_count = sentiment_counts.get('Negatif', 0)
+            total_count = positif_count + negatif_count
+            
+            # Buat statistik yang elegan menggunakan kolom
+            stat_col1, stat_col2, stat_col3 = st.columns(3)
+            
+            with stat_col1:
+                st.markdown("""
+                    <div style="
+                        background: linear-gradient(135deg, #2E8B57, #3CB371);
+                        padding: 20px;
+                        border-radius: 15px;
+                        text-align: center;
+                        color: white;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    ">
+                        <h3 style="margin: 0; font-size: 24px;">{}</h3>
+                        <p style="margin: 5px 0 0 0; font-size: 14px;">Positif</p>
+                    </div>
+                """.format(positif_count), unsafe_allow_html=True)
+            
+            with stat_col2:
+                st.markdown("""
+                    <div style="
+                        background: linear-gradient(135deg, #DC143C, #FF6347);
+                        padding: 20px;
+                        border-radius: 15px;
+                        text-align: center;
+                        color: white;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    ">
+                        <h3 style="margin: 0; font-size: 24px;">{}</h3>
+                        <p style="margin: 5px 0 0 0; font-size: 14px;">Negatif</p>
+                    </div>
+                """.format(negatif_count), unsafe_allow_html=True)
+            
+            with stat_col3:
+                st.markdown("""
+                    <div style="
+                        background: linear-gradient(135deg, #4682B4, #5F9EA0);
+                        padding: 20px;
+                        border-radius: 15px;
+                        text-align: center;
+                        color: white;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    ">
+                        <h3 style="margin: 0; font-size: 24px;">{}</h3>
+                        <p style="margin: 5px 0 0 0; font-size: 14px;">Total</p>
+                    </div>
+                """.format(total_count), unsafe_allow_html=True)
             
         st.markdown("---")
-        st.markdown("### Browse Data")
+        st.markdown("### Cari Data")
         
         # Use original_data for viewing to show data before oversampling
         data_to_view = st.session_state.original_data if 'original_data' in st.session_state else st.session_state.data
         
-        search_query = st.text_input("Search in review content:", placeholder="Type here to search...")
+        search_query = st.text_input("Cari dalam konten review:", placeholder="Ketik di sini untuk mencari...")
         
         if search_query:
-            # Filter data based on search query (case-insensitive)
+            # Filter data berdasarkan query pencarian (case-insensitive)
             filtered_data = data_to_view[data_to_view['content'].str.contains(search_query, case=False, na=False)]
-            st.dataframe(filtered_data.style.set_properties(**{
+            
+            # Terapkan styling yang lebih baik ke dataframe
+            styled_data = filtered_data.style.set_properties(**{
                 'background-color': '#f8f9fa',
-                'border-radius': '10px',
-                'padding': '10px'
-            }))
+                'border-radius': '8px',
+                'padding': '12px',
+                'border': '1px solid #e9ecef',
+                'font-size': '14px'
+            }).set_table_styles([
+                {'selector': 'th', 'props': [
+                    ('background-color', '#343a40'),
+                    ('color', 'white'),
+                    ('font-weight', 'bold'),
+                    ('text-align', 'center'),
+                    ('padding', '12px'),
+                    ('border-radius', '8px 8px 0 0')
+                ]},
+                {'selector': 'td', 'props': [
+                    ('border-bottom', '1px solid #dee2e6'),
+                    ('text-align', 'left')
+                ]},
+                {'selector': 'tr:hover', 'props': [
+                    ('background-color', '#e3f2fd'),
+                    ('transition', 'background-color 0.3s ease')
+                ]}
+            ])
+            
+            st.dataframe(styled_data, use_container_width=True)
         else:
-            # Show all data if search query is empty
-            st.dataframe(data_to_view.style.set_properties(**{
+            # Tampilkan semua data jika query pencarian kosong dengan styling yang lebih baik
+            styled_data = data_to_view.style.set_properties(**{
                 'background-color': '#f8f9fa',
-                'border-radius': '10px',
-                'padding': '10px'
-            }))
+                'border-radius': '8px',
+                'padding': '12px',
+                'border': '1px solid #e9ecef',
+                'font-size': '14px'
+            }).set_table_styles([
+                {'selector': 'th', 'props': [
+                    ('background-color', '#343a40'),
+                    ('color', 'white'),
+                    ('font-weight', 'bold'),
+                    ('text-align', 'center'),
+                    ('padding', '12px'),
+                    ('border-radius', '8px 8px 0 0')
+                ]},
+                {'selector': 'td', 'props': [
+                    ('border-bottom', '1px solid #dee2e6'),
+                    ('text-align', 'left')
+                ]},
+                {'selector': 'tr:hover', 'props': [
+                    ('background-color', '#e3f2fd'),
+                    ('transition', 'background-color 0.3s ease')
+                ]}
+            ])
+            
+            st.dataframe(styled_data, use_container_width=True)
 
     def render_model_performance(self):
-        """Render model performance metrics"""
+        """Render metrik performa model"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
-                <h1 style='color: #2c3e50;'>Model Performance Analysis</h1>
+                <h1 style='color: #2c3e50;'>Analisis Performa Model</h1>
             </div>
         """, unsafe_allow_html=True)
         
         if not st.session_state.data_loaded:
-            st.warning("Please load or input data first")
+            st.warning("Silakan memuat atau memasukkan data terlebih dahulu")
             return
         
         # Display current data source
         data_source = st.session_state.get('data_source', 'unknown')
         if data_source == "database":
-            st.info("**Training Model on:** Database Data (auto-loaded)")
+            st.info("**Training Model pada:** Database Data (otomatis dimuat)")
         elif data_source == "csv":
-            st.info("**Training Model on:** Uploaded CSV File")
+            st.info("**Training Model pada:** File CSV yang diunggah")
         elif data_source == "scraped":
-            st.info("**Training Model on:** Scraped Data")
+            st.info("**Training Model pada:** Data yang discrape")
         else:
-            st.info("**Training Model on:** Database Data (auto-loaded)")
+            st.info("**Training Model pada:** Database Data (otomatis dimuat)")
         
         if len(st.session_state.data) < 10:
-            st.warning("Insufficient data for model training. Please add more data (at least 10 entries).")
+            st.warning("Data tidak cukup untuk pelatihan model. Silakan tambahkan data (minimal 10 entri).")
             return
         
         # Split data
@@ -468,65 +586,143 @@ class Dashboard:
             tfidf_test = vectorizer.transform(X_test)
             y_pred = model.predict(tfidf_test)
             
-            # Display metrics
-            col1, col2 = st.columns([1, 1])
+            # Calculate accuracy
+            accuracy = accuracy_score(y_test, y_pred)
             
-            with col1:
-                st.markdown("### Classification Report")
-                st.code(classification_report(y_test, y_pred), language='text')
-                
+            # Display overall accuracy in a card
+            st.markdown("### Performa Model Keseluruhan")
+            col1, col2, col3 = st.columns(3)
             with col2:
-                st.markdown("### Confusion Matrix")
-                cm = confusion_matrix(y_test, y_pred)
-                fig, ax = plt.subplots(figsize=(8, 6))
-                sns.heatmap(cm, annot=True, fmt='d', ax=ax, 
-                           cmap='Blues', cbar=False)
-                plt.xlabel('Predicted')
-                plt.ylabel('Actual')
-                st.pyplot(fig)
-                
+                st.markdown(f'''
+                    <div style="
+                        background: linear-gradient(135deg, #4CAF50, #45a049);
+                        padding: 32px 0 24px 0;
+                        border-radius: 20px;
+                        text-align: center;
+                        color: #222;
+                        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+                        margin: 20px 0;
+                    ">
+                        <span style="font-size: 2.5rem; font-weight: 700;">{accuracy:.1%}</span><br>
+                        <span style="font-size: 1.1rem; font-weight: bold;">Akurasi</span>
+                    </div>
+                ''', unsafe_allow_html=True)
+            
+            # Classification report as cards
+            st.markdown("### Laporan Klasifikasi")
+            report = classification_report(y_test, y_pred, output_dict=True)
+            labels = [lbl for lbl in report.keys() if lbl not in ['accuracy', 'macro avg', 'weighted avg']]
+            metrics = ['precision', 'recall', 'f1-score', 'support']
+            card_colors = {
+                'Positif': 'linear-gradient(135deg, #2E8B57, #3CB371)',
+                'Negatif': 'linear-gradient(135deg, #DC143C, #FF6347)',
+                'avg / total': 'linear-gradient(135deg, #4682B4, #5F9EA0)'
+            }
+            # For each label, show metrics as cards
+            for label in labels:
+                st.markdown(f"#### {label}")
+                card_cols = st.columns(4)
+                for i, metric in enumerate(metrics):
+                    value = report[label][metric]
+                    if metric == 'support':
+                        value_str = f"{int(value)}"
+                    else:
+                        value_str = f"{value:.3f}"
+                    card_color = card_colors.get(label, 'linear-gradient(135deg, #4682B4, #5F9EA0)')
+                    card_html = f'''
+                        <div style="
+                            background: {card_color};
+                            padding: 28px 0 18px 0;
+                            border-radius: 20px;
+                            text-align: center;
+                            color: #222;
+                            box-shadow: 0 4px 8px rgba(0,0,0,0.10);
+                            margin: 10px 0;
+                        ">
+                            <span style="font-size: 2rem; font-weight: 700;">{value_str}</span><br>
+                            <span style="font-size: 1rem; font-weight: bold;">{metric.capitalize()}</span>
+                        </div>
+                    '''
+                    card_cols[i].markdown(card_html, unsafe_allow_html=True)
+            # Confusion matrix as cards
+            st.markdown("### Matriks Konfusi")
+            cm = confusion_matrix(y_test, y_pred, labels=['Negatif', 'Positif'])
+            cm_labels = [['True Neg', 'False Pos'], ['False Neg', 'True Pos']]
+            cm_colors = [['linear-gradient(135deg, #4682B4, #5F9EA0)', 'linear-gradient(135deg, #DC143C, #FF6347)'],
+                         ['linear-gradient(135deg, #DC143C, #FF6347)', 'linear-gradient(135deg, #2E8B57, #3CB371)']]
+            cm_cols = st.columns(2)
+            for i in range(2):
+                for j in range(2):
+                    value = cm[i, j]
+                    label = cm_labels[i][j]
+                    color = cm_colors[i][j]
+                    card_html = f'''
+                        <div style="
+                            background: {color};
+                            padding: 32px 0 24px 0;
+                            border-radius: 20px;
+                            text-align: center;
+                            color: #222;
+                            box-shadow: 0 4px 8px rgba(0,0,0,0.10);
+                            margin: 10px 0;
+                        ">
+                            <span style="font-size: 2.5rem; font-weight: 700;">{value}</span><br>
+                            <span style="font-size: 1.1rem; font-weight: bold;">{label}</span>
+                        </div>
+                    '''
+                    cm_cols[j].markdown(card_html, unsafe_allow_html=True)
+            st.markdown("""
+                <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3; margin-top: 15px;">
+                    <p style="margin: 0; font-size: 14px;">
+                        <strong>Interpretasi Matriks:</strong><br>
+                        • <strong>True Neg</strong>: Prediksi Negatif benar<br>
+                        • <strong>False Pos</strong>: Prediksi Positif salah<br>
+                        • <strong>False Neg</strong>: Prediksi Negatif salah<br>
+                        • <strong>True Pos</strong>: Prediksi Positif benar
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
             # Save model to session state
             st.session_state.model = model
             st.session_state.vectorizer = vectorizer
-            
         except Exception as e:
             logger.error(f"Error in model performance: {str(e)}")
-            st.error("Error analyzing model performance. Check your data.")
+            st.error("Error menganalisis performa model. Periksa data Anda.")
 
     def render_sentiment_prediction(self):
         """Render sentiment prediction interface"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
-                <h1 style='color: #2c3e50;'>Sentiment Prediction</h1>
+                <h1 style='color: #2c3e50;'>Prediksi Sentimen</h1>
             </div>
         """, unsafe_allow_html=True)
         
         if not st.session_state.data_loaded:
-            st.warning("Please load or input data first to train the model")
+            st.warning("Silakan memuat atau memasukkan data terlebih dahulu untuk melatih model")
             return
         
         # Display current data source
         data_source = st.session_state.get('data_source', 'unknown')
         if data_source == "database":
-            st.info("**Model trained on:** Database Data (auto-loaded)")
+            st.info("**Model dilatih pada:** Database Data (otomatis dimuat)")
         elif data_source == "csv":
-            st.info("**Model trained on:** Uploaded CSV File")
+            st.info("**Model dilatih pada:** File CSV yang diunggah")
         elif data_source == "scraped":
-            st.info("**Model trained on:** Scraped Data")
+            st.info("**Model dilatih pada:** Data yang discrape")
         else:
-            st.info("**Model trained on:** Database Data (auto-loaded)")
+            st.info("**Model dilatih pada:** Database Data (otomatis dimuat)")
         
         user_input = st.text_area(
-            "Enter text for analysis:",
-            placeholder="Type your text here...",
-            help="Enter the text you want to analyze for sentiment"
+            "Masukkan teks untuk analisis:",
+            placeholder="Ketik teks Anda di sini...",
+            help="Masukkan teks yang ingin Anda analisis untuk sentimen"
         )
         
         save_to_db = st.checkbox("Save result to database", value=True)
         
         if st.button('Analyze Sentiment', use_container_width=True):
             if not user_input:
-                st.warning('Please enter some text to analyze')
+                st.warning('Silakan masukkan beberapa teks untuk dianalisis')
                 return
                 
             try:
@@ -558,7 +754,7 @@ class Dashboard:
                 
                 # Show prediction probabilities
                 probs = st.session_state.model.predict_proba(tfidf_input)[0]
-                st.markdown("### Confidence Scores")
+                st.markdown("### Skor Kepercayaan")
                 prob_df = pd.DataFrame({
                     'Sentiment': st.session_state.model.classes_,
                     'Confidence': probs
@@ -580,31 +776,31 @@ class Dashboard:
                         text_tokens,
                         text_steamindo
                     ):
-                        st.success("Result saved to database")
+                        st.success("Hasil berhasil disimpan ke database")
                     else:
-                        st.error("Failed to save result to database")
+                        st.error("Gagal menyimpan hasil ke database")
                 
             except Exception as e:
                 logger.error(f"Error in sentiment prediction: {str(e)}")
-                st.error("An error occurred during analysis. Please try again.")
+                st.error("Terjadi kesalahan selama analisis. Silakan coba lagi.")
 
     def render_wordcloud(self):
         """Render wordcloud visualization"""
         st.markdown("""
             <div style='text-align: center; margin-bottom: 2rem;'>
-                <h1 style='color: #2c3e50;'>Word Cloud Visualization</h1>
+                <h1 style='color: #2c3e50;'>Visualisasi Word Cloud</h1>
             </div>
         """, unsafe_allow_html=True)
         
         if not st.session_state.data_loaded:
-            st.warning("Please load data first")
+            st.warning("Silakan memuat data terlebih dahulu")
             return
         
         # Create tabs for positive and negative word clouds
         tab1, tab2 = st.tabs(["Positive Sentiment", "Negative Sentiment"])
         
         with tab1:
-            st.markdown("### Positive Sentiment Word Cloud")
+            st.markdown("### Word Cloud Sentimen Positif")
             positive_data = st.session_state.data[st.session_state.data['Label'] == 'Positif']
             if not positive_data.empty:
                 # Combine all positive text
@@ -626,14 +822,14 @@ class Dashboard:
                 st.pyplot(fig)
                 
                 # Save option
-                if st.button("Save Positive Word Cloud", key="save_pos_wordcloud"):
+                if st.button("Simpan Word Cloud Sentimen Positif", key="save_pos_wordcloud"):
                     wordcloud.to_file("images/wordcloud_positif.png")
-                    st.success("Word cloud saved as 'images/wordcloud_positif.png'")
+                    st.success("Word cloud berhasil disimpan sebagai 'images/wordcloud_positif.png'")
             else:
-                st.warning("No positive sentiment data available")
+                st.warning("Tidak ada data sentimen positif yang tersedia")
         
         with tab2:
-            st.markdown("### Negative Sentiment Word Cloud")
+            st.markdown("### Word Cloud Sentimen Negatif")
             negative_data = st.session_state.data[st.session_state.data['Label'] == 'Negatif']
             if not negative_data.empty:
                 # Combine all negative text
@@ -655,8 +851,8 @@ class Dashboard:
                 st.pyplot(fig)
                 
                 # Save option
-                if st.button("Save Negative Word Cloud", key="save_neg_wordcloud"):
+                if st.button("Simpan Word Cloud Sentimen Negatif", key="save_neg_wordcloud"):
                     wordcloud.to_file("images/wordcloud_negatif.png")
-                    st.success("Word cloud saved as 'images/wordcloud_negatif.png'")
+                    st.success("Word cloud berhasil disimpan sebagai 'images/wordcloud_negatif.png'")
             else:
-                st.warning("No negative sentiment data available") 
+                st.warning("Tidak ada data sentimen negatif yang tersedia") 

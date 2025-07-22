@@ -5,7 +5,6 @@ import logging
 import hashlib
 from config import DB_CONFIG
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -19,12 +18,10 @@ def create_db_connection():
         )
         
         if connection.is_connected():
-            # Create database if it doesn't exist
             cursor = connection.cursor()
             cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_CONFIG['database']}")
             cursor.close()
             
-            # Connect to the database
             connection.close()
             connection = mysql.connector.connect(
                 host=DB_CONFIG['host'],
@@ -46,7 +43,6 @@ def create_tables(connection):
     try:
         cursor = connection.cursor()
         
-        # Create users table
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -59,7 +55,6 @@ def create_tables(connection):
         )
         """)
         
-        # Create sentiment_data table
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS sentiment_data (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -74,7 +69,6 @@ def create_tables(connection):
         )
         """)
         
-        # Insert default admin user if not exists
         cursor.execute("SELECT COUNT(*) FROM users WHERE username = 'admin'")
         admin_exists = cursor.fetchone()[0]
         
@@ -97,23 +91,19 @@ def register_user(connection, username, password, email=None, role='user'):
     try:
         cursor = connection.cursor()
         
-        # Check if username already exists
         cursor.execute("SELECT COUNT(*) FROM users WHERE username = %s", (username,))
         if cursor.fetchone()[0] > 0:
             cursor.close()
             return False, "Username already exists"
         
-        # Check if email already exists (if provided)
         if email:
             cursor.execute("SELECT COUNT(*) FROM users WHERE email = %s", (email,))
             if cursor.fetchone()[0] > 0:
                 cursor.close()
                 return False, "Email already exists"
         
-        # Hash password
         password_hash = hashlib.sha256(password.encode()).hexdigest()
         
-        # Insert new user
         cursor.execute("""
         INSERT INTO users (username, password_hash, email, role) 
         VALUES (%s, %s, %s, %s)

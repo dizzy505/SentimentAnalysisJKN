@@ -11,10 +11,8 @@ from database import create_db_connection, fetch_data_from_db, insert_data_to_db
 from utils import get_csv_download_link
 import hashlib
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
-# Custom CSS
 st.markdown("""
 <link href=\"https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap\" rel=\"stylesheet\">
 <style>
@@ -106,11 +104,9 @@ class Dashboard:
     def __init__(self, analyzer: SentimentAnalyzer):
         self.analyzer = analyzer
         
-        # Ensure database connection
         if st.session_state.db_connection is None:
             st.session_state.db_connection = create_db_connection()
         
-        # Auto-load data from database if not already loaded
         if not st.session_state.data_loaded and st.session_state.db_connection and st.session_state.db_connection.is_connected():
             self._load_database_data()
         
@@ -121,7 +117,6 @@ class Dashboard:
             if not db_data.empty:
                 st.session_state.original_data = db_data.copy()
                 
-                # Perform oversampling for positive labels
                 positif_samples = db_data[db_data['Label'] == 'Positif']
                 negatif_samples = db_data[db_data['Label'] == 'Negatif']
                 
@@ -153,7 +148,6 @@ class Dashboard:
                 </div>
             """, unsafe_allow_html=True)
             
-            # Membuat tab untuk login dan registrasi
             tab1, tab2 = st.tabs(["Login", "Register"])
             
             with tab1:
@@ -186,7 +180,6 @@ class Dashboard:
                     reg_password = st.text_input('Password', type='password', placeholder='Pilih password', key='reg_password')
                     reg_confirm_password = st.text_input('Konfirmasi Password', type='password', placeholder='Konfirmasi password', key='reg_confirm_password')
                     
-                    # Password validation
                     password_requirements = """
                     **Persyaratan Password:**
                     - Minimal 6 karakter
@@ -195,7 +188,6 @@ class Dashboard:
                     st.markdown(password_requirements)
                     
                     if st.button('Register', use_container_width=True, key='register_button'):
-                        # Validation
                         if not reg_username or not reg_password:
                             st.error('Username dan password diperlukan')
                         elif reg_password != reg_confirm_password:
@@ -228,7 +220,6 @@ class Dashboard:
             </div>
         """, unsafe_allow_html=True)
         
-        # Display current data source status
         if st.session_state.data_loaded:
             data_source = st.session_state.get('data_source', 'unknown')
             if data_source == "database":
@@ -254,12 +245,10 @@ class Dashboard:
                 try:
                     df = pd.read_csv(uploaded_file)
                     
-                    # Validate columns
                     required_cols = ['content', 'Label']
                     if not all(col in df.columns for col in required_cols):
                         st.error("CSV harus mengandung kolom 'content' dan 'Label'")
                     else:
-                        # Preprocess text
                         df['text_clean'] = df['content'].apply(self.analyzer.preprocess_text)
                         df['text_StopWord'] = df['text_clean']
                         df['text_tokens'] = df['text_StopWord']
@@ -267,7 +256,6 @@ class Dashboard:
                         
                         st.session_state.original_data = df.copy()
 
-                        # Perform oversampling for positive labels
                         positif_samples = df[df['Label'] == 'Positif']
                         negatif_samples = df[df['Label'] == 'Negatif']
                         
@@ -277,7 +265,6 @@ class Dashboard:
                             df = pd.concat([df, synthetic_samples], ignore_index=True)
                             st.info(f"Oversampling label positif ke {len(df[df['Label'] == 'Positif'])} sampel")
                         
-                        # Save to database option
                         if st.checkbox("Save to database"):
                             if st.session_state.db_connection and st.session_state.db_connection.is_connected():
                                 if batch_insert_to_db(st.session_state.db_connection, df):
@@ -287,14 +274,12 @@ class Dashboard:
                             else:
                                 st.error("Koneksi database tidak tersedia")
                         
-                        # Switch active data to CSV
                         st.session_state.data = df
                         st.session_state.data_loaded = True
                         st.session_state.sample_data_used = False
                         st.session_state.data_source = "csv"
                         st.success("Data berhasil dimuat! Data aktif berubah ke file CSV yang diunggah.")
                         
-                        # Display sample
                         st.markdown("### Data Preview")
                         st.dataframe(df.head().style.set_properties(**{
                             'background-color': '#f8f9fa',
@@ -313,7 +298,6 @@ class Dashboard:
                 if st.session_state.data_loaded and st.session_state.get('data_source') == "database":
                     st.success("Database data saat ini aktif")
                     
-                    # Show current data info
                     if 'original_data' in st.session_state and st.session_state.original_data is not None:
                         st.markdown("#### Informasi Data Database Asli")
                         original_data = st.session_state.original_data
@@ -330,7 +314,6 @@ class Dashboard:
                         if 'data' in st.session_state and st.session_state.data is not None:
                             st.info(f"ℹLabel positif di oversampling ke {len(st.session_state.data[st.session_state.data['Label'] == 'Positif'])} sampel untuk menyeimbangkan dataset.")
 
-                        # Option to refresh database data
                         if st.button("Muat Ulang Data Database", use_container_width=True):
                             self._load_database_data()
                             st.success("Database data berhasil dimuat ulang!")
@@ -338,7 +321,6 @@ class Dashboard:
                 else:
                     st.info("ℹDatabase data saat ini tidak aktif. Upload CSV atau scrape data untuk mengubah data aktif.")
                     
-                    # Option to switch back to database data
                     if st.button("Switch to Database Data", use_container_width=True):
                         self._load_database_data()
                         if st.session_state.data_loaded:
@@ -373,7 +355,6 @@ class Dashboard:
                     df['text_tokens'] = df['text_StopWord']
                     df['text_steamindo'] = df['text_tokens']
 
-                    # Switch active data to scraped data
                     st.session_state.data = df
                     st.session_state.original_data = df.copy()
                     st.session_state.data_loaded = True
@@ -405,7 +386,6 @@ class Dashboard:
             st.warning("Silakan memuat atau memasukkan data terlebih dahulu")
             return
         
-        # Display current data source
         data_source = st.session_state.get('data_source', 'unknown')
         if data_source == "database":
             st.info("**Menganalisis:** Database Data (otomatis dimuat)")
@@ -416,29 +396,22 @@ class Dashboard:
         else:
             st.info("**Menganalisis:** Database Data (otomatis dimuat)")
         
-        # Display sentiment distribution
         st.markdown("### Distribusi Sentimen")
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            # Ambil data asli sebelum oversampling jika ada
             data_to_use = st.session_state.original_data if 'original_data' in st.session_state else st.session_state.data
             
-            # Tentukan urutan label dan warna secara eksplisit (Positif, Negatif)
             labels = ['Positif', 'Negatif']
-            colors = ['#2E8B57', '#DC143C']  # Sea Green, Crimson
+            colors = ['#2E8B57', '#DC143C']
             
-            # Hitung jumlah per label sesuai urutan (Positif, Negatif)
             sentiment_counts = data_to_use['Label'].value_counts()
             values = [sentiment_counts.get(label, 0) for label in labels]
 
-            # Buat pie chart yang elegan
             fig, ax = plt.subplots(figsize=(10, 8))
             
-            # Tambahkan efek bayangan dan efek eksplosi untuk elegan
             explode = (0.05, 0.05)
             
-            # Buat pie chart dengan styling yang lebih baik
             wedges, texts, autotexts = ax.pie(
                 values, 
                 labels=labels, 
@@ -451,17 +424,14 @@ class Dashboard:
                 pctdistance=0.85
             )
             
-            # Sesuaikan styling autotext
             for autotext in autotexts:
                 autotext.set_color('white')
                 autotext.set_fontweight('bold')
                 autotext.set_fontsize(11)
             
-            # Add title
             ax.set_title('Distribusi Sentimen', fontsize=16, fontweight='bold', pad=20)
             ax.axis('equal')
             
-            # Add legend with better positioning
             ax.legend(wedges, labels, title="Sentimen", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
             
             plt.tight_layout()
@@ -471,12 +441,10 @@ class Dashboard:
         with col2:
             st.markdown("#### Statistik Jumlah")
             
-            # Calculate counts
             positif_count = sentiment_counts.get('Positif', 0)
             negatif_count = sentiment_counts.get('Negatif', 0)
             total_count = positif_count + negatif_count
             
-            # Buat statistik yang elegan menggunakan kolom
             stat_col1, stat_col2, stat_col3 = st.columns(3)
             
             with stat_col1:
@@ -527,16 +495,13 @@ class Dashboard:
         st.markdown("---")
         st.markdown("### Cari Data")
         
-        # Use original_data for viewing to show data before oversampling
         data_to_view = st.session_state.original_data if 'original_data' in st.session_state else st.session_state.data
         
         search_query = st.text_input("Cari dalam konten review:", placeholder="Ketik di sini untuk mencari...")
         
         if search_query:
-            # Filter data berdasarkan query pencarian (case-insensitive)
             filtered_data = data_to_view[data_to_view['content'].str.contains(search_query, case=False, na=False)]
             
-            # Terapkan styling yang lebih baik ke dataframe
             styled_data = filtered_data.style.set_properties(**{
                 'background-color': '#f8f9fa',
                 'border-radius': '8px',
@@ -564,7 +529,6 @@ class Dashboard:
             
             st.dataframe(styled_data, use_container_width=True)
         else:
-            # Tampilkan semua data jika query pencarian kosong dengan styling yang lebih baik
             styled_data = data_to_view.style.set_properties(**{
                 'background-color': '#f8f9fa',
                 'border-radius': '8px',
@@ -604,7 +568,6 @@ class Dashboard:
             st.warning("Silakan memuat atau memasukkan data terlebih dahulu")
             return
         
-        # Display current data source
         data_source = st.session_state.get('data_source', 'unknown')
         if data_source == "database":
             st.info("**Training Model pada:** Database Data (otomatis dimuat)")
@@ -619,24 +582,16 @@ class Dashboard:
             st.warning("Data tidak cukup untuk pelatihan model. Silakan tambahkan data (minimal 10 entri).")
             return
         
-        # Split data
         X_train, X_test, y_train, y_test = train_test_split(
             st.session_state.data['content'], st.session_state.data['Label'], 
             test_size=0.2, random_state=42
         )
         
-        # Train model
         try:
             model, vectorizer = self.analyzer.train_model(X_train, y_train)
-            
-            # Make predictions
             tfidf_test = vectorizer.transform(X_test)
             y_pred = model.predict(tfidf_test)
-            
-            # Calculate accuracy
             accuracy = accuracy_score(y_test, y_pred)
-            
-            # Display overall accuracy in a card
             st.markdown("### Performa Model Keseluruhan")
             col1, col2, col3 = st.columns(3)
             with col2:
@@ -655,7 +610,6 @@ class Dashboard:
                     </div>
                 ''', unsafe_allow_html=True)
             
-            # Classification report as cards
             st.markdown("### Laporan Klasifikasi")
             report = classification_report(y_test, y_pred, output_dict=True)
             labels = [lbl for lbl in report.keys() if lbl not in ['accuracy', 'macro avg', 'weighted avg']]
@@ -665,7 +619,6 @@ class Dashboard:
                 'Negatif': 'linear-gradient(135deg, #DC143C, #FF6347)',
                 'avg / total': 'linear-gradient(135deg, #4682B4, #5F9EA0)'
             }
-            # For each label, show metrics as cards
             for label in labels:
                 st.markdown(f"#### {label}")
                 card_cols = st.columns(4)
@@ -691,7 +644,6 @@ class Dashboard:
                         </div>
                     '''
                     card_cols[i].markdown(card_html, unsafe_allow_html=True)
-            # Confusion matrix as cards
             st.markdown("### Matriks Konfusi")
             cm = confusion_matrix(y_test, y_pred, labels=['Negatif', 'Positif'])
             cm_labels = [['True Neg', 'False Pos'], ['False Neg', 'True Pos']]
@@ -729,7 +681,6 @@ class Dashboard:
                     </p>
                 </div>
             """, unsafe_allow_html=True)
-            # Save model to session state
             st.session_state.model = model
             st.session_state.vectorizer = vectorizer
         except Exception as e:
@@ -748,7 +699,6 @@ class Dashboard:
             st.warning("Silakan memuat atau memasukkan data terlebih dahulu untuk melatih model")
             return
         
-        # Display current data source
         data_source = st.session_state.get('data_source', 'unknown')
         if data_source == "database":
             st.info("**Model dilatih pada:** Database Data (otomatis dimuat)")
@@ -773,13 +723,11 @@ class Dashboard:
                 return
                 
             try:
-                # Preprocess input
                 text_clean = self.analyzer.preprocess_text(user_input)
                 text_StopWord = text_clean
                 text_tokens = text_StopWord
                 text_steamindo = text_tokens
                 
-                # Prepare model if not already cached
                 if not st.session_state.model:
                     X_train, _, y_train, _ = train_test_split(
                         st.session_state.data['content'], st.session_state.data['Label'], 
@@ -789,17 +737,14 @@ class Dashboard:
                         self.analyzer.train_model(X_train, y_train)
                     )
                 
-                # Make prediction
                 tfidf_input = st.session_state.vectorizer.transform([user_input])
                 prediction = st.session_state.model.predict(tfidf_input)[0]
                 
-                # Display result with appropriate styling
                 if prediction == 'Positif':
                     st.success(f"Sentiment: {prediction}")
                 else:
                     st.error(f"Sentiment: {prediction}")
                 
-                # Show prediction probabilities
                 probs = st.session_state.model.predict_proba(tfidf_input)[0]
                 st.markdown("### Skor Kepercayaan")
                 prob_df = pd.DataFrame({
@@ -812,7 +757,6 @@ class Dashboard:
                     'padding': '10px'
                 }))
                 
-                # Save to database if selected
                 if save_to_db and st.session_state.db_connection and st.session_state.db_connection.is_connected():
                     if insert_data_to_db(
                         st.session_state.db_connection, 
@@ -843,17 +787,14 @@ class Dashboard:
             st.warning("Silakan memuat data terlebih dahulu")
             return
         
-        # Create tabs for positive and negative word clouds
         tab1, tab2 = st.tabs(["Positive Sentiment", "Negative Sentiment"])
         
         with tab1:
             st.markdown("### Word Cloud Sentimen Positif")
             positive_data = st.session_state.data[st.session_state.data['Label'] == 'Positif']
             if not positive_data.empty:
-                # Combine all positive text
                 positive_text = ' '.join(positive_data['text_clean'].astype(str))
                 
-                # Create word cloud
                 wordcloud = WordCloud(
                     width=800, 
                     height=400, 
@@ -862,13 +803,11 @@ class Dashboard:
                     max_words=100
                 ).generate(positive_text)
                 
-                # Display
                 fig, ax = plt.subplots(figsize=(10, 5))
                 ax.imshow(wordcloud, interpolation='bilinear')
                 ax.axis('off')
                 st.pyplot(fig)
                 
-                # Save option
                 if st.button("Simpan Word Cloud Sentimen Positif", key="save_pos_wordcloud"):
                     wordcloud.to_file("images/wordcloud_positif.png")
                     st.success("Word cloud berhasil disimpan sebagai 'images/wordcloud_positif.png'")
@@ -879,10 +818,8 @@ class Dashboard:
             st.markdown("### Word Cloud Sentimen Negatif")
             negative_data = st.session_state.data[st.session_state.data['Label'] == 'Negatif']
             if not negative_data.empty:
-                # Combine all negative text
                 negative_text = ' '.join(negative_data['text_clean'].astype(str))
                 
-                # Create word cloud
                 wordcloud = WordCloud(
                     width=800, 
                     height=400, 
@@ -891,13 +828,11 @@ class Dashboard:
                     max_words=100
                 ).generate(negative_text)
                 
-                # Display
                 fig, ax = plt.subplots(figsize=(10, 5))
                 ax.imshow(wordcloud, interpolation='bilinear')
                 ax.axis('off')
                 st.pyplot(fig)
                 
-                # Save option
                 if st.button("Simpan Word Cloud Sentimen Negatif", key="save_neg_wordcloud"):
                     wordcloud.to_file("images/wordcloud_negatif.png")
                     st.success("Word cloud berhasil disimpan sebagai 'images/wordcloud_negatif.png'")

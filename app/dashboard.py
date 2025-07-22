@@ -16,43 +16,90 @@ logger = logging.getLogger(__name__)
 
 # Custom CSS
 st.markdown("""
-    <style>
-    .main {
-        padding: 2rem;
-    }
-    .stButton>button {
-        width: 100%;
-        border-radius: 20px;
-        height: 3em;
-        font-size: 1.1em;
-    }
-    .stTextInput>div>div>input {
-        border-radius: 10px;
-    }
-    .stSelectbox>div>div>select {
-        border-radius: 10px;
-    }
-    .stTextArea>div>div>textarea {
-        border-radius: 10px;
-    }
-    .stFileUploader>div>div>button {
-        border-radius: 10px;
-    }
-    .css-1d391kg {
-        padding: 1rem;
-        border-radius: 10px;
-        background-color: #f0f2f6;
-    }
-    .stAlert {
-        border-radius: 10px;
-    }
-    .metric-card {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 0.5rem;
-    }
-    </style>
+<link href=\"https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap\" rel=\"stylesheet\">
+<style>
+body {
+    font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+    background-color: #19223a;
+}
+.main {
+    padding: 2rem;
+}
+.stButton>button {
+    width: 100%;
+    border-radius: 12px;
+    height: 3em;
+    font-size: 1.1em;
+    font-weight: 600;
+    background: #22305a;
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+    transition: all 0.2s;
+}
+.stButton>button:hover {
+    background: #2a3962;
+    color: #fff;
+    transform: translateY(-2px) scale(1.03);
+}
+.stTextInput>div>div>input, .stSelectbox>div>div>select, .stTextArea>div>div>textarea {
+    border-radius: 12px;
+    border: 1.5px solid #e0e6ed;
+    padding: 0.7rem 1rem;
+    font-size: 1rem;
+    background: #fff;
+    margin-bottom: 0.5rem;
+    font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+}
+.stTextInput>div>div>input:focus, .stSelectbox>div>div>select:focus, .stTextArea>div>div>textarea:focus {
+    border: 1.5px solid #28407a;
+    outline: none;
+}
+.stFileUploader>div>div>button {
+    border-radius: 12px;
+    background: #22305a;
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+}
+.stFileUploader>div>div>button:hover {
+    background: #2a3962;
+}
+.css-1d391kg, .stAlert, .metric-card, .stDataFrame, .stExpander, .stTabs {
+    border-radius: 16px !important;
+    box-shadow: 0 2px 12px rgba(44,62,80,0.07);
+}
+.metric-card {
+    background-color: #22305a;
+    padding: 1.2rem;
+    border-radius: 16px;
+    margin: 0.5rem;
+    box-shadow: 0 2px 12px rgba(44,62,80,0.07);
+    color: #fff;
+}
+.stTabs [data-baseweb="tab"] {
+    font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #fff;
+    border-radius: 10px 10px 0 0;
+    background: #22305a;
+    margin-right: 4px;
+    padding: 0.7rem 1.2rem;
+    transition: background 0.2s;
+}
+.stTabs [aria-selected="true"] {
+    background: #28407a;
+    color: #fff;
+}
+.stExpander {
+    background: #22305a;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 12px rgba(44,62,80,0.07);
+    color: #fff;
+}
+</style>
 """, unsafe_allow_html=True)
 
 class Dashboard:

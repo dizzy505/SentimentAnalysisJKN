@@ -3,7 +3,6 @@ import pandas as pd
 import logging
 import streamlit as st
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

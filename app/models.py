@@ -7,7 +7,6 @@ from sklearn.model_selection import train_test_split
 from typing import Tuple
 import pandas as pd
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -21,14 +20,10 @@ class SentimentAnalyzer:
         try:
             if not isinstance(text, str):
                 return ""
-            # Remove HTML tags
             text = re.sub('<[^>]*>', '', text)
-            # Extract emoticons
             emoticons = re.findall('(?::|;|=)()(?:-)?(?:\\)|\\(|D|P)', text)
-            # Convert to lowercase and join emoticons
             text = (re.sub('[\\W]+', ' ', text.lower()) + 
                    ' '.join(emoticons).replace('-', ''))
-            # Apply stemming
             text = self.stemmer.stem(text)
             return text.strip()
         except Exception as e:
@@ -68,10 +63,8 @@ def create_sample_data() -> pd.DataFrame:
         ]
     }
     
-    # Create dataframe
     df = pd.DataFrame(sample_data)
     
-    # Add preprocessed text column
     analyzer = SentimentAnalyzer()
     df['text_steamindo'] = df['content'].apply(analyzer.preprocess_text)
     
